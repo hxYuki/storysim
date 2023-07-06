@@ -1,0 +1,14 @@
+.StatusBox {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.StatusItem {
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px;
+    border: white 1px solid;
+    color: #fff;
+}
