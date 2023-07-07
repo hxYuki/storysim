@@ -1,6 +1,8 @@
 import gameStyles from './Game.module.css'
 // import '../index.css'
-import { Component, createSignal, onMount } from 'solid-js'
+import { Component, For, createSignal, onMount } from 'solid-js'
+
+import { mahoushoujoEvents } from '../common/events-collection'
 
 type CharacterStatus = {
     Health: number,
@@ -22,22 +24,48 @@ type CharacterStatus = {
 
 const GamePage: Component = () => {
 
+    const [status, setStatus] = createSignal<CharacterStatus>();
+    const [history, setHistory] = createSignal<EventHistoryItem[]>([
+        { text: '你醒来了', isChoice: false }
+    ]);
+
+    const [currentEvent, setCurrentEvent] = createSignal<SingleEvent>(
+        mahoushoujoEvents[0] as SingleEvent
+    );
+
     return <>
         <StatusBar />
-        <EventsBar />
+        <EventsHistoryBar history={history()} />
+        <ActionBar options={currentEvent()?.options} />
     </>
 }
 export default GamePage;
 
-const EventsBar: Component = () => {
-
-    const [events, setEvents] = createSignal<string[]>([])
+interface EventHistoryItem {
+    text: string;
+    isChoice: boolean;
+}
+interface EventsHistoryBarProps {
+    history: EventHistoryItem[];
+}
+const EventsHistoryBar: Component<EventsHistoryBarProps> = (p) => {
     return <ul class='flex flex-col w-2/3 border rounded-lg p-5 space-y-2 overflow-y-auto'>
-        <EventItem text='You are born' />
-        <EventItem text='You are born' rightAligned />
-
+        <For each={p.history}>{(event) => <EventItem text={event.text} rightAligned={event.isChoice} />}</For>
     </ul>
 }
+
+interface ActionBarProps {
+    options?: OptionItem[];
+}
+const ActionBar: Component<ActionBarProps> = (props) => {
+
+    return <div class='flex flex-row justify-around w-2/3 border rounded-lg p-5'>
+        <For each={props.options}>{(option) =>
+            <button class={` rounded-lg p-2 ${option.doNotEndEvent ? 'border-dotted border-2' : 'border'}`}>{option.shortText}</button>
+        }</For>
+    </div>
+}
+
 interface EventItemProps {
     text: string;
     rightAligned?: boolean;
@@ -58,9 +86,9 @@ const EventItem: Component<EventItemProps> = (props) => {
 const StatusBar = () => {
     return <>
         <ul class={gameStyles.StatusBox}>
-            <PercentBar name='Health' maxHealth={100} currentHealth={100} />
-            <PercentBar name='Santy' maxHealth={100} currentHealth={100} />
-
+            <PercentBar name='Health' maxValue={100} current={100} />
+            <PercentBar name='Santy' maxValue={100} current={100} />
+            <PercentBar name='Stamina' maxValue={100} current={100} />
         </ul>
         <ul class={gameStyles.StatusBox}>
             <Status name="Constitution" value={123} />
@@ -75,13 +103,13 @@ const StatusBar = () => {
 
 interface HealthBarProps {
     name: string;
-    maxHealth: number;
-    currentHealth: number;
+    maxValue: number;
+    current: number;
 }
 
-const PercentBar = ({ name, maxHealth, currentHealth }: HealthBarProps) => {
+const PercentBar = ({ name, maxValue, current }: HealthBarProps) => {
     const percentage = Math.floor(
-        (currentHealth / maxHealth) * 100);
+        (current / maxValue) * 100);
 
     return (
         <div style={{ position: 'relative', display: 'flex', 'align-items': 'center', 'margin': '10px' }}>
@@ -91,7 +119,7 @@ const PercentBar = ({ name, maxHealth, currentHealth }: HealthBarProps) => {
             <div style={{ flex: 1, width: '100px' }}>
                 <div style={{ width: '100%', height: '20px', 'background-color': 'gray', position: 'relative' }}>
                     <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', 'z-index': 1 }}>
-                        {currentHealth}/{maxHealth}
+                        {current}/{maxValue}
                     </span>
                     <div
                         style={{
