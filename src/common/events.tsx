@@ -1,15 +1,15 @@
 
-type EventItem = SingleEvent | EventCollection;
-type EventCollection = {
+type EventItem = SingleEvent | EventChain;
+type EventChain = {
     events: SingleEvent[];
 };
 type ConditionToken = string;
-type Condition = (() => boolean) | ConditionToken;
+type Condition = ((ctx: GameContext) => boolean) | ConditionToken;
 type Conditional = {
     conditions?: Condition[];
 }
 
-type OptionBehavior = (() => boolean) | ConditionToken | ConditionToken[];
+type OptionBehavior = ((ctx: GameContext) => boolean) | ConditionToken | ConditionToken[];
 type OptionItem = {
     // 选项文本
     shortText: string;

@@ -3,24 +3,7 @@ import gameStyles from './Game.module.css'
 import { Component, For, createSignal, onMount } from 'solid-js'
 
 import { mahoushoujoEvents } from '../common/events-collection'
-
-type CharacterStatus = {
-    Health: number,
-    Sanity: number,
-    Stamina: number,
-    Moral: number,
-    Money: number,
-    Age: number,
-
-    Constitution: number,
-    Dexterity: number,
-    Intelligence: number,
-    Intuition: number,
-    Luck: number,
-    Willpower: number,
-
-    Speed: number,
-}
+import { CharacterStatus } from '../common/CharacterStatus'
 
 const GamePage: Component = () => {
 
