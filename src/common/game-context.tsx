@@ -1,10 +1,14 @@
-interface GameContext {
-    playerDetails: unknown;
-    reachedTokens: unknown;
-    currentEvent: unknown;
+import { CharacterStatus } from "./CharacterStatus";
+import { ConditionToken, SingleEvent } from "./events";
 
-    playerStatSet: (stat: string, value: number) => void;
+export interface GameContext {
+    playerDetails: CharacterStatus;
+    reachedTokens: ConditionToken[];
+    currentEvent: SingleEvent;
+
+    playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
+    playerStatsSet: (stats: Partial<CharacterStatus>) => void;
     tokenSet: (token: string) => void;
     achievementReached: (achievement: string) => void;
-    endChainEvent: () => void;
+    breakChainEvent: () => void;
 }

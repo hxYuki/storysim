@@ -3,23 +3,131 @@ import gameStyles from './Game.module.css'
 import { Component, For, createSignal, onMount } from 'solid-js'
 
 import { mahoushoujoEvents } from '../common/events-collection'
-import { CharacterStatus } from '../common/CharacterStatus'
+import { CharacterStatus, createEmptyStatus } from '../common/CharacterStatus'
+import { GameContext } from '../common/game-context'
+import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent } from '../common/events'
+
+import chance from 'chance'
 
 const GamePage: Component = () => {
 
-    const [status, setStatus] = createSignal<CharacterStatus>();
+    const chanceInstance = chance('TODO: initialize seed later');
+
+    const defaultStatus = createEmptyStatus();
+    // 基础（最大）属性值 与 当前属性值
+    const [status, setStatus] = createSignal<CharacterStatus>(defaultStatus);
+    const [currentStatus, setCurrentStatus] = createSignal<CharacterStatus>(defaultStatus);
+
     const [history, setHistory] = createSignal<EventHistoryItem[]>([
         { text: '你醒来了', isChoice: false }
     ]);
 
-    const [currentEvent, setCurrentEvent] = createSignal<SingleEvent>(
-        mahoushoujoEvents[0] as SingleEvent
-    );
+    // 候选事件列表
+    const [availableEvents, setAvailableEvents] = createSignal<EventItem[]>([]);
+    // 对应索引的事件线的下一个事件的索引
+    // const [availableEventProgress, setAvailableEventProgress] = createSignal<number[]>([]);
+
+    // 当前正在进行的事件
+    // const [currentEventIndex, setCurrentEventIndex] = createSignal<number>(-1);
+    const [currentEventItem, setCurrentEventItem] = createSignal<EventItem>();
+    // 当前正在进行的事件链的索引
+    // const [currentEventChainIndex, setCurrentEventChainIndex] = createSignal<number>(0);
+    // 当前已经满足的事件条件标记
+    const [reachedTokens, setReachedTokens] = createSignal<string[]>([]);
+
+    // 生成用于各种操作闭包的上下文参数
+    const makeGameContext = (): GameContext => ({
+        playerDetails: status(),
+        reachedTokens: reachedTokens(),
+        currentEvent: currentEventItem() as SingleEvent,
+
+        tokenSet: insertToken,
+        playerStatSet: (stat, value) => {
+            setCurrentStatus(s => {
+                return { ...s, [stat]: value }
+            })
+        },
+        playerStatsSet: (stats) => {
+            setCurrentStatus(s => {
+                return { ...s, ...stats }
+            })
+        },
+
+        achievementReached: (achievement: string) => { },
+        breakChainEvent: () => { },
+    })
+
+    const insertToken = (token: string) => {
+        setReachedTokens(t => [...t, token]);
+    }
+    const insertHistory = (text: string, isChoice: boolean) => {
+        setHistory(h => [...h, { text, isChoice }]);
+    }
+    const nextEvent = () => {
+        let nextEvent: SingleEvent;
+        const currentEvent = currentEventItem();
+        // 事件链
+        if (currentEvent && currentEvent.type === 'chain' && currentEvent.events.length > currentEvent.index) {
+
+            nextEvent = currentEvent.events[currentEvent.index];
+            // setCurrentEventChainIndex(i => i + 1);
+            currentEvent.index++;
+        }
+        // 获取下一个事件
+        else {
+            let candidates = availableEvents()
+                // .map((e, i) => ({ events: e, progress: availableEventProgress()[i], index: i }))
+                .filter(
+                    (event) => {
+                        if ((event.type === 'chain' || event.type === 'collection') && event.index >= event.events.length) return false;
+                        return true;
+                    });
+            const picked = weightedPickEvent(candidates, makeGameContext(), chanceInstance);
+
+            if (picked.type === 'single') {
+                nextEvent = picked;
+            } else {
+                nextEvent = picked.events[picked.index++];
+            }
+        }
+        insertHistory(nextEvent.text, false);
+
+        setCurrentEventItem(nextEvent);
+    }
+    const handleOption = (option: OptionItem) => {
+        if (option.text && option.text.length > 0) {
+            insertHistory(option.text, true);
+        }
+        if (option.responseText && option.responseText.length > 0) {
+            insertHistory(option.responseText, false);
+        }
+
+        let behaviorResult = true;
+        if (option.behavior) {
+            if (typeof option.behavior === 'string') {
+                insertToken(option.behavior);
+            }
+            else if (typeof option.behavior === 'function') {
+                behaviorResult = option.behavior(makeGameContext());
+            }
+            else {
+                option.behavior.forEach(b => {
+                    insertToken(b);
+                })
+            }
+        }
+
+        if (option.doNotEndEvent || !behaviorResult) {
+            return;
+        } else {
+            nextEvent();
+        }
+    }
 
     return <>
         <StatusBar />
         <EventsHistoryBar history={history()} />
-        <ActionBar options={currentEvent()?.options} />
+        <ActionBar options={(currentEventItem() as SingleEvent)?.options} />
     </>
 }
 export default GamePage;
@@ -33,7 +141,7 @@ interface EventsHistoryBarProps {
 }
 const EventsHistoryBar: Component<EventsHistoryBarProps> = (p) => {
     return <ul class='flex flex-col w-2/3 border rounded-lg p-5 space-y-2 overflow-y-auto'>
-        <For each={p.history}>{(event) => <EventItem text={event.text} rightAligned={event.isChoice} />}</For>
+        <For each={p.history}>{(event) => <EventHistoryItem text={event.text} rightAligned={event.isChoice} />}</For>
     </ul>
 }
 
@@ -49,11 +157,11 @@ const ActionBar: Component<ActionBarProps> = (props) => {
     </div>
 }
 
-interface EventItemProps {
+interface EventHistoryItemProps {
     text: string;
     rightAligned?: boolean;
 }
-const EventItem: Component<EventItemProps> = (props) => {
+const EventHistoryItem: Component<EventHistoryItemProps> = (props) => {
     const [show, setShow] = createSignal(false);
     onMount(() => {
         setShow(true);
