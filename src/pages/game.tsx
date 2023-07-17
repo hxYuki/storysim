@@ -1,8 +1,8 @@
 import gameStyles from './Game.module.css'
 // import '../index.css'
-import { Component, For, createSignal, onMount } from 'solid-js'
+import { Component, For, Show, createEffect, createSignal, onMount } from 'solid-js'
 
-import { mahoushoujoEvents } from '../common/events-collection'
+import { createEventCandidates } from '../common/events-collection'
 import { CharacterStatus, createEmptyStatus } from '../common/CharacterStatus'
 import { GameContext } from '../common/game-context'
 import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent } from '../common/events'
@@ -94,7 +94,13 @@ const GamePage: Component = () => {
 
         setCurrentEventItem(nextEvent);
     }
-    const handleOption = (option: OptionItem) => {
+    const handleOption = (option?: OptionItem) => {
+        console.log("aaa");
+        if (!option) {
+            nextEvent();
+            return;
+        }
+
         if (option.text && option.text.length > 0) {
             insertHistory(option.text, true);
         }
@@ -124,10 +130,18 @@ const GamePage: Component = () => {
         }
     }
 
+    onMount(() => {
+        // TODO: 为每局游戏生成一个 seed， 作为全局的随机数发生器
+        chanceInstance.seed = "Genenrate a seed";
+        const events = createEventCandidates(20, chanceInstance);
+        setAvailableEvents(events);
+
+    })
+
     return <>
         <StatusBar />
         <EventsHistoryBar history={history()} />
-        <ActionBar options={(currentEventItem() as SingleEvent)?.options} />
+        <ActionBar options={(currentEventItem() as SingleEvent)?.options} handler={handleOption} />
     </>
 }
 export default GamePage;
@@ -147,13 +161,19 @@ const EventsHistoryBar: Component<EventsHistoryBarProps> = (p) => {
 
 interface ActionBarProps {
     options?: OptionItem[];
+    handler: (option?: OptionItem) => void;
 }
 const ActionBar: Component<ActionBarProps> = (props) => {
 
     return <div class='flex flex-row justify-around w-2/3 border rounded-lg p-5'>
-        <For each={props.options}>{(option) =>
-            <button class={` rounded-lg p-2 ${option.doNotEndEvent ? 'border-dotted border-2' : 'border'}`}>{option.shortText}</button>
-        }</For>
+        <Show when={props.options && props.options.length > 0} fallback={
+            <button onClick={() => props.handler()} class='rounded-lg p-2 border'>继续</button>
+        }>
+
+            <For each={props.options}>{(option) =>
+                <button onClick={() => props.handler(option)} class={` rounded-lg p-2 ${option.doNotEndEvent ? 'border-dotted border-2' : 'border'}`}>{option.shortText}</button>
+            }</For>
+        </Show>
     </div>
 }
 

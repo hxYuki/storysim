@@ -18,8 +18,23 @@ export type EventThread = {
     // 将要进行的事件索引
     index: number;
     // 将要进行的事件，可以用于计算概率权重等
-    next: SingleEvent;
+    // next: () => SingleEvent | undefined;
 }
+
+export class EventThreadImpl implements EventThread {
+    type: "collection";
+    events: SingleEvent[];
+    index: number;
+    next: () => SingleEvent;
+
+    constructor() {
+        this.type = "collection";
+        this.events = [];
+        this.index = 0;
+        this.next = () => this.events[this.index];
+    }
+}
+
 export type ConditionToken = string;
 export type Condition = ((ctx: GameContext) => boolean) | ConditionToken;
 export type Conditional = {
@@ -68,12 +83,14 @@ export type EventProperty = {
     possibility?: (ctx: GameContext) => number;
 }
 
+export const InitialEvent: SingleEvent = {
+    type: 'single',
+    text: '你醒了过来，发现自己躺在一间陌生的房间里。'
+}
+
 export function weightedPickEvent(events: EventItem[], ctx: GameContext, rng: Chance.Chance): EventItem {
-    let cal = events.map(e => {
-        if (e.type === 'collection')
-            return { event: e, weight: e.next.possibility ? e.next.possibility(ctx) : 1 };
-        else
-            return { event: e, weight: e.possibility ? e.possibility(ctx) : 1 };
+    let cal = events.map(getEventFromItem).map(e => {
+        return { event: e, weight: e.possibility ? e.possibility(ctx) : 1 };
     });
     let totalWeight = cal.reduce((acc, cur) => acc + cur.weight, 0);
     let rnd = rng.floating({ min: 0, max: totalWeight });
@@ -84,4 +101,13 @@ export function weightedPickEvent(events: EventItem[], ctx: GameContext, rng: Ch
         rnd -= item.weight;
     }
     return cal[cal.length - 1].event;
+}
+
+export function getEventFromItem(item: EventItem): SingleEvent {
+    if (item.type === 'single')
+        return item;
+    else if (item.type === 'chain') // chain 中的属性不会覆盖到返回值中
+        return item.events[item.index];
+    else
+        return item.events[item.index];
 }
