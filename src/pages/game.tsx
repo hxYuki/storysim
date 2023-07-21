@@ -5,7 +5,7 @@ import { Component, For, Show, createEffect, createSignal, onMount } from 'solid
 import { createEventCandidates } from '../common/events-collection'
 import { CharacterStatus, createEmptyStatus } from '../common/CharacterStatus'
 import { GameContext } from '../common/game-context'
-import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent } from '../common/events'
+import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, ConditionToken } from '../common/events'
 
 import chance from 'chance'
 
@@ -33,15 +33,25 @@ const GamePage: Component = () => {
     // 当前正在进行的事件链的索引
     // const [currentEventChainIndex, setCurrentEventChainIndex] = createSignal<number>(0);
     // 当前已经满足的事件条件标记
-    const [reachedTokens, setReachedTokens] = createSignal<string[]>([]);
+    const [reachedTokens, setReachedTokens] = createSignal<ConditionToken[]>([]);
 
     // 生成用于各种操作闭包的上下文参数
-    const makeGameContext = (): GameContext => ({
+    const makeGameContext = (eventThis?: EventItem): GameContext => ({
         playerDetails: status(),
         reachedTokens: reachedTokens(),
         currentEvent: currentEventItem() as SingleEvent,
 
+        thisEvent: eventThis,
+
         tokenSet: insertToken,
+        tokenExists(token) {
+            // TODO: implement
+            return 0;
+        },
+        tokenRemove: (token: ConditionToken) => {
+            // TODO: implement
+
+        },
         playerStatSet: (stat, value) => {
             setCurrentStatus(s => {
                 return { ...s, [stat]: value }
@@ -57,7 +67,7 @@ const GamePage: Component = () => {
         breakChainEvent: () => { },
     })
 
-    const insertToken = (token: string) => {
+    const insertToken = (token: ConditionToken) => {
         setReachedTokens(t => [...t, token]);
     }
     const insertHistory = (text: string, isChoice: boolean) => {
@@ -77,9 +87,12 @@ const GamePage: Component = () => {
         else {
             let candidates = availableEvents()
                 // .map((e, i) => ({ events: e, progress: availableEventProgress()[i], index: i }))
+                .filter((event) =>
+                    event.repeatable || !reachedTokens().includes(event.id)
+                )
                 .filter(
                     (event) => {
-                        if ((event.type === 'chain' || event.type === 'collection') && event.index >= event.events.length) return false;
+                        if ((event.type === 'chain') && event.index >= event.events.length) return false;
                         return true;
                     });
             const picked = weightedPickEvent(candidates, makeGameContext(), chanceInstance);
@@ -95,7 +108,6 @@ const GamePage: Component = () => {
         setCurrentEventItem(nextEvent);
     }
     const handleOption = (option?: OptionItem) => {
-        console.log("aaa");
         if (!option) {
             nextEvent();
             return;
@@ -114,9 +126,11 @@ const GamePage: Component = () => {
                 insertToken(option.behavior);
             }
             else if (typeof option.behavior === 'function') {
-                behaviorResult = option.behavior(makeGameContext());
+                behaviorResult = option.behavior(makeGameContext(currentEventItem()!));
             }
-            else {
+            else if ('count' in option.behavior) {
+                insertToken(option.behavior)
+            } else {
                 option.behavior.forEach(b => {
                     insertToken(b);
                 })
@@ -198,7 +212,7 @@ const StatusBar = () => {
     return <>
         <ul class={gameStyles.StatusBox}>
             <PercentBar name='Health' maxValue={100} current={100} />
-            <PercentBar name='Santy' maxValue={100} current={100} />
+            <PercentBar name='Sanity' maxValue={100} current={100} />
             <PercentBar name='Stamina' maxValue={100} current={100} />
         </ul>
         <ul class={gameStyles.StatusBox}>
