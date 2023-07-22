@@ -5,7 +5,7 @@ import { Component, For, Show, createEffect, createSignal, onMount } from 'solid
 import { createEventCandidates } from '../common/events-collection'
 import { CharacterStatus, createEmptyStatus } from '../common/CharacterStatus'
 import { GameContext } from '../common/game-context'
-import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, ConditionToken } from '../common/events'
+import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, ConditionToken, StackableToken, filterReadyEvents } from '../common/events'
 
 import chance from 'chance'
 
@@ -85,16 +85,8 @@ const GamePage: Component = () => {
         }
         // 获取下一个事件
         else {
-            let candidates = availableEvents()
-                // .map((e, i) => ({ events: e, progress: availableEventProgress()[i], index: i }))
-                .filter((event) =>
-                    event.repeatable || !reachedTokens().includes(event.id)
-                )
-                .filter(
-                    (event) => {
-                        if ((event.type === 'chain') && event.index >= event.events.length) return false;
-                        return true;
-                    });
+            let candidates = filterReadyEvents(availableEvents(), makeGameContext());
+
             const picked = weightedPickEvent(candidates, makeGameContext(), chanceInstance);
 
             if (picked.type === 'single') {

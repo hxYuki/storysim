@@ -14,13 +14,16 @@ export interface GameContext {
 
     playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
     playerStatsSet: (stats: Partial<CharacterStatus>) => void;
-    tokenSet: (token: string) => void;
+    tokenSet: (token: ConditionToken) => void;
     // 0: 不存在，>=1: 存在，堆叠层数
-    tokenExists: (token: string) => number;
-    tokenRemove: (token: string) => void;
+    tokenExists: (token: ConditionToken) => number;
+    tokenRemove: (token: ConditionToken) => void;
     achievementReached: (achievement: string) => void;
     breakChainEvent: () => void;
 }
+
+// 用于事件上下文的只读上下文（或许有用或许没用吧）
+export interface ReadOnlyGameContext { }
 
 export interface PlayerContext {
     playerDetails: CharacterStatus;

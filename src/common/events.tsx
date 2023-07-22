@@ -71,7 +71,7 @@ export type SingleEvent = {
     additonal?: ({ text: string } & Conditional)[];
 
     options?: OptionItem[];
-} & Conditional & EventProperty;
+} & EventProperty;
 
 export type EventProperty = {
     // 事件所属主线名
@@ -88,14 +88,36 @@ export type EventProperty = {
     active?: boolean;
 
     // 事件出现几率影响因子，增加或减少事件出现的可能性
-    // 影响出现几率的百分比，所有事件的基础权重为 1，返回0.2即提升20% 即权重为 1.2
+    // 影响出现几率的百分比，所有事件的基础权重为 1
     possibility?: (ctx: GameContext) => number;
-}
+} & Conditional
 
 export const InitialEvent: SingleEvent = {
     type: 'single',
     id: 'initial',
     text: '你醒了过来，发现自己躺在一间陌生的房间里。'
+}
+
+export function filterReadyEvents(events: EventItem[], ctx: GameContext) {
+    let furfilled = events.filter(e =>
+        e.repeatable || ctx.tokenExists(e.id) < 1
+    ).filter(e =>
+        e.conditions?.every(condition => {
+            if (typeof condition === 'function') {
+                return condition(ctx);
+            }
+            else {
+                return ctx.tokenExists(condition) > 0;
+            }
+        }) ?? true)
+
+    let trigg = furfilled.filter(e => e.triggered)
+
+    if (trigg.length > 0) {
+        return trigg;
+    } else {
+        return furfilled;
+    }
 }
 
 export function weightedPickEvent(events: EventItem[], ctx: GameContext, rng: Chance.Chance): EventItem {
