@@ -100,14 +100,14 @@ export const InitialEvent: SingleEvent = {
 
 export function filterReadyEvents(events: EventItem[], ctx: GameContext) {
     let furfilled = events.filter(e =>
-        e.repeatable || ctx.tokenExists(e.id) < 1
+        e.repeatable || !ctx.tokenExists(e.id)
     ).filter(e =>
         e.conditions?.every(condition => {
             if (typeof condition === 'function') {
                 return condition(ctx);
             }
             else {
-                return ctx.tokenExists(condition) > 0;
+                return ctx.tokenExists(condition);
             }
         }) ?? true)
 
@@ -121,7 +121,7 @@ export function filterReadyEvents(events: EventItem[], ctx: GameContext) {
 }
 
 export function weightedPickEvent(events: EventItem[], ctx: GameContext, rng: Chance.Chance): EventItem {
-    let cal = events.map(getEventFromItem).map(e => {
+    let cal = events.map(e => {
         return { event: e, weight: e.possibility ? e.possibility(ctx) : 1 };
     });
     let totalWeight = cal.reduce((acc, cur) => acc + cur.weight, 0);

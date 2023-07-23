@@ -30,10 +30,19 @@ const GamePage: Component = () => {
     // 当前正在进行的事件
     // const [currentEventIndex, setCurrentEventIndex] = createSignal<number>(-1);
     const [currentEventItem, setCurrentEventItem] = createSignal<EventItem>();
+    const [currentSingleEvent, setCurrentSingleEvent] = createSignal<SingleEvent>();
+
     // 当前正在进行的事件链的索引
     // const [currentEventChainIndex, setCurrentEventChainIndex] = createSignal<number>(0);
     // 当前已经满足的事件条件标记
     const [reachedTokens, setReachedTokens] = createSignal<ConditionToken[]>([]);
+    function findToken<T extends ConditionToken, R extends (T extends StackableToken ? StackableToken : ConditionToken)>(token: T): R | undefined {
+        if (typeof token === 'string') {
+            return reachedTokens().find(t => t === token || (typeof t === 'object' && t.token === token)) as R;
+        } else {
+            return reachedTokens().find(t => typeof t === 'object' && t.token === token.token) as R;
+        }
+    }
 
     // 生成用于各种操作闭包的上下文参数
     const makeGameContext = (eventThis?: EventItem): GameContext => ({
@@ -43,14 +52,48 @@ const GamePage: Component = () => {
 
         thisEvent: eventThis,
 
-        tokenSet: insertToken,
-        tokenExists(token) {
-            // TODO: implement
-            return 0;
+        tokenSet(token, stackable = false) {
+            const t = findToken(token);
+            if (t) {
+                this.tokenRemove(token);
+                if (typeof t === 'string') {
+                    insertToken({ token, count: 2 });
+                } else {
+                    insertToken({ token: t.token, count: t.count + 1 });
+                }
+            } else
+                if (stackable) {
+                    insertToken({ token, count: 1 });
+                } else
+                    insertToken(token);
         },
-        tokenRemove: (token: ConditionToken) => {
-            // TODO: implement
+        tokenExists(token) {
+            const item = findToken(token);
+            if (!item) return false;
 
+            if (typeof token === 'string') {
+                return true;
+            } else {
+                if ((item as StackableToken).count >= token.count) {
+                    return true;
+                } else {
+                    return false;
+                }
+
+            }
+        },
+        tokenRemove: (token: ConditionToken, removeAll = false) => {
+            if (removeAll) {
+                removeToken(token);
+            } else {
+                const item = findToken(token);
+                if (!item) return;
+
+                removeToken(item);
+                if (typeof item === 'object' && item.count > 1) {
+                    insertToken({ token: item.token, count: item.count - 1 });
+                }
+            }
         },
         playerStatSet: (stat, value) => {
             setCurrentStatus(s => {
@@ -70,34 +113,44 @@ const GamePage: Component = () => {
     const insertToken = (token: ConditionToken) => {
         setReachedTokens(t => [...t, token]);
     }
+    const removeToken = (token: ConditionToken) => {
+        setReachedTokens(t => t.filter(t => t !== token));
+    }
     const insertHistory = (text: string, isChoice: boolean) => {
         setHistory(h => [...h, { text, isChoice }]);
     }
     const nextEvent = () => {
         let nextEvent: SingleEvent;
         const currentEvent = currentEventItem();
+
+        if (currentEvent && currentEvent.id !== '') {
+            insertToken(currentEvent.id);
+        }
         // 事件链
         if (currentEvent && currentEvent.type === 'chain' && currentEvent.events.length > currentEvent.index) {
 
-            nextEvent = currentEvent.events[currentEvent.index];
+            nextEvent = currentEvent.events[currentEvent.index++];
             // setCurrentEventChainIndex(i => i + 1);
-            currentEvent.index++;
+            // currentEvent.index++;
         }
         // 获取下一个事件
         else {
             let candidates = filterReadyEvents(availableEvents(), makeGameContext());
-
+            console.log('candidates', candidates)
             const picked = weightedPickEvent(candidates, makeGameContext(), chanceInstance);
+
+            setCurrentEventItem(picked);
 
             if (picked.type === 'single') {
                 nextEvent = picked;
             } else {
+                picked.index = 0;
                 nextEvent = picked.events[picked.index++];
             }
         }
         insertHistory(nextEvent.text, false);
 
-        setCurrentEventItem(nextEvent);
+        setCurrentSingleEvent(nextEvent);
     }
     const handleOption = (option?: OptionItem) => {
         if (!option) {
@@ -145,9 +198,9 @@ const GamePage: Component = () => {
     })
 
     return <>
-        <StatusBar />
+        <StatusBar playerMaxStatus={status()} playerCurrentStatus={currentStatus()} />
         <EventsHistoryBar history={history()} />
-        <ActionBar options={(currentEventItem() as SingleEvent)?.options} handler={handleOption} />
+        <ActionBar options={currentSingleEvent()?.options} handler={handleOption} />
     </>
 }
 export default GamePage;
@@ -200,20 +253,24 @@ const EventHistoryItem: Component<EventHistoryItemProps> = (props) => {
     )
 }
 
-const StatusBar = () => {
+interface StatusBarProps {
+    playerMaxStatus: CharacterStatus;
+    playerCurrentStatus: CharacterStatus;
+}
+const StatusBar: Component<StatusBarProps> = (props) => {
     return <>
         <ul class={gameStyles.StatusBox}>
-            <PercentBar name='Health' maxValue={100} current={100} />
-            <PercentBar name='Sanity' maxValue={100} current={100} />
-            <PercentBar name='Stamina' maxValue={100} current={100} />
+            <PercentBar name='Health' maxValue={props.playerMaxStatus.Health} current={props.playerCurrentStatus.Health} />
+            <PercentBar name='Sanity' maxValue={props.playerMaxStatus.Sanity} current={props.playerCurrentStatus.Sanity} />
+            <PercentBar name='Stamina' maxValue={props.playerMaxStatus.Stamina} current={props.playerCurrentStatus.Stamina} />
         </ul>
         <ul class={gameStyles.StatusBox}>
-            <Status name="Constitution" value={123} />
-            <Status name="Dexterity" value={456} />
-            <Status name="Intelligence" value={789} />
-            <Status name="Luck" value={789} />
-            <Status name="Intuition" value={789} />
-            <Status name="Willpower" value={789} />
+            <Status name="Constitution" value={props.playerMaxStatus.Constitution} />
+            <Status name="Dexterity" value={props.playerMaxStatus.Dexterity} />
+            <Status name="Intelligence" value={props.playerMaxStatus.Intelligence} />
+            <Status name="Luck" value={props.playerMaxStatus.Luck} />
+            <Status name="Intuition" value={props.playerMaxStatus.Intuition} />
+            <Status name="Willpower" value={props.playerMaxStatus.Willpower} />
             {/* ... */}
         </ul></>
 }
