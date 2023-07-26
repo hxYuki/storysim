@@ -34,6 +34,7 @@ const GamePage: Component = () => {
 
     // 当前正在进行的事件链的索引
     // const [currentEventChainIndex, setCurrentEventChainIndex] = createSignal<number>(0);
+
     // 当前已经满足的事件条件标记
     const [reachedTokens, setReachedTokens] = createSignal<ConditionToken[]>([]);
     function findToken<T extends ConditionToken, R extends (T extends StackableToken ? StackableToken : ConditionToken)>(token: T): R | undefined {
@@ -48,24 +49,28 @@ const GamePage: Component = () => {
     const makeGameContext = (eventThis?: EventItem): GameContext => ({
         playerDetails: status(),
         reachedTokens: reachedTokens(),
-        currentEvent: currentEventItem() as SingleEvent,
+        currentEvent: currentSingleEvent()!,
 
         thisEvent: eventThis,
 
         tokenSet(token, stackable = false) {
-            const t = findToken(token);
+            const t = findToken(token) as StackableToken;
             if (t) {
                 this.tokenRemove(token);
-                if (typeof t === 'string') {
-                    insertToken({ token, count: 2 });
-                } else {
-                    insertToken({ token: t.token, count: t.count + 1 });
-                }
+                // if (typeof t === 'string') {
+                //     insertToken({ token, count: 2 });
+                // } else {
+                insertToken({ token: t.token, count: t.count + 1 });
+                // }
             } else
-                if (stackable) {
-                    insertToken({ token, count: 1 });
-                } else
-                    insertToken(token);
+                // if (stackable) {
+                insertToken({ token, count: 1 });
+            // } else
+            // insertToken(token);
+        },
+        tokenGet(token) {
+            const t = findToken(token);
+            return typeof t === 'string' ? 1 : (t?.count ?? 0)
         },
         tokenExists(token) {
             const item = findToken(token);
@@ -106,15 +111,21 @@ const GamePage: Component = () => {
             })
         },
 
-        achievementReached: (achievement: string) => { },
-        breakChainEvent: () => { },
+        achievementReached: (achievement: string) => {
+            console.error('TODO: achievementReached', 'not implemented');
+        },
+        breakChainEvent: () => {
+            console.error('TODO: breakChainEvent', 'not implemented');
+        },
     })
 
     const insertToken = (token: ConditionToken) => {
-        setReachedTokens(t => [...t, token]);
+        const ot = findToken(token);
+        setReachedTokens(t => [...t.filter(x => x !== ot), token]);
     }
     const removeToken = (token: ConditionToken) => {
-        setReachedTokens(t => t.filter(t => t !== token));
+        const ot = findToken(token);
+        setReachedTokens(t => t.filter(t => t !== ot));
     }
     const insertHistory = (text: string, isChoice: boolean) => {
         setHistory(h => [...h, { text, isChoice }]);
