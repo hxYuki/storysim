@@ -1,3 +1,4 @@
+import { makeTokenCondition } from "./Conditions";
 import { EventChain, EventItem, EventThread, SingleEvent } from "./events";
 
 import chance from 'chance';
@@ -34,11 +35,15 @@ const mahoushoujoEvents: EventItem[] = [
         id: 'mahoushoujo-begin',
         text: '今天你在外面多逗留了一会，回家时稍稍有些晚了。\n夜色笼罩的街上，你看到前方有一团白色——它对你说话了。\n“请和我签订契约，成为魔法少女吧。这个世界需要你。”',
         repeatable: true,
-        conditions: [(ctx) => {
-            if (ctx.tokenExists({ token: 'mahoushoujo-begin-rejected', count: 5 }))
-                return false;
-            return true
-        }],
+        conditions: [
+            // 以下两种写法等价
+            // (ctx) => {
+            //     if (ctx.tokenExists({ token: 'mahoushoujo-begin-rejected', count: 5 }))
+            //         return false;
+            //     return true
+            // },
+            makeTokenCondition('ContextLessThan', { token: 'mahoushoujo-begin-rejected', count: 5 })
+        ],
         possibility: (ctx) => {
             if (ctx.playerDetails.Willpower < 5) return 1.2;
             else return 1;
@@ -66,7 +71,7 @@ const mahoushoujoEvents: EventItem[] = [
                     ctx.tokenSet('mahoushoujo');
                     ctx.thisEvent!.repeatable = false;
                     const status = ctx.playerDetails;
-                    ctx.playerStatsSet({ 'Constitution': status.Constitution + 5, 'Dexterity': status.Dexterity + 3, 'Intuition': status.Intuition + 5 });
+                    ctx.playerStatsSet({ Health: status.Health + 10, HealthCurrent: status.HealthCurrent + 10, 'Constitution': status.Constitution + 5, 'Dexterity': status.Dexterity + 3, 'Intuition': status.Intuition + 5 });
                     return true;
                 },
             },
@@ -107,7 +112,7 @@ export const DailyEvents: EventItem[] = [
             }, {
                 type: 'single',
                 id: '',
-                text: '你费了好大力气挤进去，只见到一片狼藉，听说是有邪教徒想要在这里向邪神献祭，一名路过的高手当机立断，见义勇为，邪教徒一死一重伤，剩下的杂鱼见状不妙直接溜了。',
+                text: '你费了好大力气挤进去，只见到一片狼藉，听说有邪教徒想要在这里向邪神献祭，一名路过的高手当机立断，见义勇为，邪教徒一死一重伤，剩下的杂鱼见状不妙直接溜了。',
                 options: [
                     {
                         shortText: '可恨的邪教徒！',

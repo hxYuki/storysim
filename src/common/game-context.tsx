@@ -14,8 +14,10 @@ export interface GameContext {
 
     playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
     playerStatsSet: (stats: Partial<CharacterStatus>) => void;
+
     tokenSet: (token: string, stackable?: boolean) => void;
-    // 0: 不存在，>=1: 存在，堆叠层数
+    // 0: 不存在，>=1: 存在，层数
+    tokenGet: (token: ConditionToken) => number;
     tokenExists: (token: ConditionToken) => boolean;
     tokenRemove: (token: ConditionToken, removeAll?: boolean) => void;
     achievementReached: (achievement: string) => void;

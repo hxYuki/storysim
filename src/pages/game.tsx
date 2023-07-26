@@ -1,6 +1,8 @@
 import gameStyles from './Game.module.css'
 // import '../index.css'
 import { Component, For, Show, createEffect, createSignal, onMount } from 'solid-js'
+import { createStore } from "solid-js/store";
+import type { StoreNode, Store, SetStoreFunction } from "solid-js/store";
 
 import { createEventCandidates } from '../common/events-collection'
 import { CharacterStatus, createEmptyStatus } from '../common/CharacterStatus'
@@ -15,7 +17,7 @@ const GamePage: Component = () => {
 
     const defaultStatus = createEmptyStatus();
     // 基础（最大）属性值 与 当前属性值
-    const [status, setStatus] = createSignal<CharacterStatus>(defaultStatus);
+    // const [status, setStatus] = createSignal<CharacterStatus>(defaultStatus);
     const [currentStatus, setCurrentStatus] = createSignal<CharacterStatus>(defaultStatus);
 
     const [history, setHistory] = createSignal<EventHistoryItem[]>([
@@ -47,7 +49,7 @@ const GamePage: Component = () => {
 
     // 生成用于各种操作闭包的上下文参数
     const makeGameContext = (eventThis?: EventItem): GameContext => ({
-        playerDetails: status(),
+        playerDetails: currentStatus(),
         reachedTokens: reachedTokens(),
         currentEvent: currentSingleEvent()!,
 
@@ -101,14 +103,10 @@ const GamePage: Component = () => {
             }
         },
         playerStatSet: (stat, value) => {
-            setCurrentStatus(s => {
-                return { ...s, [stat]: value }
-            })
+            setCurrentStatus(s => ({ ...s, [stat]: value }))
         },
         playerStatsSet: (stats) => {
-            setCurrentStatus(s => {
-                return { ...s, ...stats }
-            })
+            setCurrentStatus(s => ({ ...s, ...stats }))
         },
 
         achievementReached: (achievement: string) => {
@@ -208,8 +206,9 @@ const GamePage: Component = () => {
 
     })
 
+
     return <>
-        <StatusBar playerMaxStatus={status()} playerCurrentStatus={currentStatus()} />
+        <StatusBar playerCurrentStatus={currentStatus()} />
         <EventsHistoryBar history={history()} />
         <ActionBar options={currentSingleEvent()?.options} handler={handleOption} />
     </>
@@ -237,11 +236,11 @@ const ActionBar: Component<ActionBarProps> = (props) => {
 
     return <div class='flex flex-row justify-around w-2/3 border rounded-lg p-5'>
         <Show when={props.options && props.options.length > 0} fallback={
-            <button onClick={() => props.handler()} class='rounded-lg p-2 border'>继续</button>
+            <button onClick={[props.handler, null]} class='rounded-lg p-2 border'>继续</button>
         }>
 
             <For each={props.options}>{(option) =>
-                <button onClick={() => props.handler(option)} class={` rounded-lg p-2 ${option.doNotEndEvent ? 'border-dotted border-2' : 'border'}`}>{option.shortText}</button>
+                <button onClick={[props.handler, option]} class={` rounded-lg p-2 ${option.doNotEndEvent ? 'border-dotted border-2' : 'border'}`}>{option.shortText}</button>
             }</For>
         </Show>
     </div>
@@ -265,23 +264,23 @@ const EventHistoryItem: Component<EventHistoryItemProps> = (props) => {
 }
 
 interface StatusBarProps {
-    playerMaxStatus: CharacterStatus;
+    // playerMaxStatus: CharacterStatus;
     playerCurrentStatus: CharacterStatus;
 }
 const StatusBar: Component<StatusBarProps> = (props) => {
     return <>
         <ul class={gameStyles.StatusBox}>
-            <PercentBar name='Health' maxValue={props.playerMaxStatus.Health} current={props.playerCurrentStatus.Health} />
-            <PercentBar name='Sanity' maxValue={props.playerMaxStatus.Sanity} current={props.playerCurrentStatus.Sanity} />
-            <PercentBar name='Stamina' maxValue={props.playerMaxStatus.Stamina} current={props.playerCurrentStatus.Stamina} />
+            <PercentBar name='Health' maxValue={props.playerCurrentStatus.Health} current={props.playerCurrentStatus.HealthCurrent} />
+            <PercentBar name='Sanity' maxValue={props.playerCurrentStatus.Sanity} current={props.playerCurrentStatus.SanityCurrent} />
+            <PercentBar name='Stamina' maxValue={props.playerCurrentStatus.Stamina} current={props.playerCurrentStatus.StaminaCurrent} />
         </ul>
         <ul class={gameStyles.StatusBox}>
-            <Status name="Constitution" value={props.playerMaxStatus.Constitution} />
-            <Status name="Dexterity" value={props.playerMaxStatus.Dexterity} />
-            <Status name="Intelligence" value={props.playerMaxStatus.Intelligence} />
-            <Status name="Luck" value={props.playerMaxStatus.Luck} />
-            <Status name="Intuition" value={props.playerMaxStatus.Intuition} />
-            <Status name="Willpower" value={props.playerMaxStatus.Willpower} />
+            <Status name="Constitution" value={props.playerCurrentStatus.Constitution} />
+            <Status name="Dexterity" value={props.playerCurrentStatus.Dexterity} />
+            <Status name="Intelligence" value={props.playerCurrentStatus.Intelligence} />
+            <Status name="Luck" value={props.playerCurrentStatus.Luck} />
+            <Status name="Intuition" value={props.playerCurrentStatus.Intuition} />
+            <Status name="Willpower" value={props.playerCurrentStatus.Willpower} />
             {/* ... */}
         </ul></>
 }
@@ -292,19 +291,19 @@ interface HealthBarProps {
     current: number;
 }
 
-const PercentBar = ({ name, maxValue, current }: HealthBarProps) => {
+const PercentBar: Component<HealthBarProps> = (props) => {
     const percentage = Math.floor(
-        (current / maxValue) * 100);
+        (props.current / props.maxValue) * 100);
 
     return (
         <div style={{ position: 'relative', display: 'flex', 'align-items': 'center', 'margin': '10px' }}>
             <div style={{ 'margin-right': '10px' }}>
-                <span>{name}: </span>
+                <span>{props.name}: </span>
             </div>
             <div style={{ flex: 1, width: '100px' }}>
                 <div style={{ width: '100%', height: '20px', 'background-color': 'gray', position: 'relative' }}>
                     <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', 'z-index': 1 }}>
-                        {current}/{maxValue}
+                        {props.current}/{props.maxValue}
                     </span>
                     <div
                         style={{
@@ -329,11 +328,11 @@ interface StatusProps {
     value: number;
 }
 
-const Status = ({ name, value }: StatusProps) => {
+const Status: Component<StatusProps> = (props) => {
     return (
         <li class={gameStyles.StatusItem}>
-            <span style={{ color: 'gray' }}>{name}: </span>
-            <span style={{ color: 'white' }}>{value}</span>
+            <span style={{ color: 'gray' }}>{props.name}: </span>
+            <span style={{ color: 'white' }}>{props.value}</span>
         </li>
     );
 };
