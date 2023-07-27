@@ -22,6 +22,8 @@ export interface GameContext {
     tokenRemove: (token: ConditionToken, removeAll?: boolean) => void;
     achievementReached: (achievement: string) => void;
     breakChainEvent: () => void;
+
+    endGame(): void;
 }
 
 // 用于事件上下文的只读上下文（或许有用或许没用吧）
@@ -34,5 +36,11 @@ export interface PlayerContext {
 }
 
 export interface EventContext {
+
+}
+
+export interface TokenContext { }
+
+export interface GameProcessContext {
 
 }

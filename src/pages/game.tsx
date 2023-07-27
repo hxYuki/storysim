@@ -7,7 +7,7 @@ import type { StoreNode, Store, SetStoreFunction } from "solid-js/store";
 import { createEventCandidates } from '../common/events-collection'
 import { CharacterStatus, createEmptyStatus } from '../common/CharacterStatus'
 import { GameContext } from '../common/game-context'
-import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, ConditionToken, StackableToken, filterReadyEvents } from '../common/events'
+import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, ConditionToken, StackableToken, filterReadyEvents, conditionsCheck } from '../common/events'
 
 import chance from 'chance'
 
@@ -115,6 +115,10 @@ const GamePage: Component = () => {
         breakChainEvent: () => {
             console.error('TODO: breakChainEvent', 'not implemented');
         },
+
+        endGame() {
+            console.error('TODO: endGame', 'not implemented');
+        },
     })
 
     const insertToken = (token: ConditionToken) => {
@@ -158,6 +162,10 @@ const GamePage: Component = () => {
             }
         }
         insertHistory(nextEvent.text, false);
+        nextEvent.additonal?.forEach(a => {
+            if (conditionsCheck(a.conditions, makeGameContext()))
+                insertHistory(a.text, false)
+        });
 
         setCurrentSingleEvent(nextEvent);
     }

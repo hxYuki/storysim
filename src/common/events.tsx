@@ -98,18 +98,21 @@ export const InitialEvent: SingleEvent = {
     text: '你醒了过来，发现自己躺在一间陌生的房间里。'
 }
 
+export function conditionsCheck(conditions: Condition[] | undefined, ctx: GameContext) {
+    return conditions?.every(condition => {
+        if (typeof condition === 'function') {
+            return condition(ctx);
+        }
+        else {
+            return ctx.tokenExists(condition);
+        }
+    }) ?? true
+}
+
 export function filterReadyEvents(events: EventItem[], ctx: GameContext) {
     let furfilled = events.filter(e =>
         e.repeatable || !ctx.tokenExists(e.id)
-    ).filter(e =>
-        e.conditions?.every(condition => {
-            if (typeof condition === 'function') {
-                return condition(ctx);
-            }
-            else {
-                return ctx.tokenExists(condition);
-            }
-        }) ?? true)
+    ).filter(e => conditionsCheck(e.conditions, ctx));
 
     let trigg = furfilled.filter(e => e.triggered)
 

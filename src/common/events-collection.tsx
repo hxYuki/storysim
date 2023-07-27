@@ -1,39 +1,23 @@
-import { makeTokenCondition } from "./Conditions";
+import { makePlayerPropertyCondition, makeTokenCondition } from "./Conditions";
 import { EventChain, EventItem, EventThread, SingleEvent } from "./events";
 
 import chance from 'chance';
 
 // 硬要说的话是玩梗事件，而不是主线事件，但是玩得大了也就成了主线了吧
-// export const mahoushoujoEvents: EventItem[] = [
-//     {
-//         type: 'single',
-//         text: '今天你在外面多逗留了一会，回家时稍稍有些晚了。\n夜色笼罩的街上，你看到前方有一团白色——它对你说话了。\n“请和我签订契约，成为魔法少女吧。这个世界需要你。”',
-//         conditions: [],
-//         options: [
-//             {
-//                 shortText: '什么东西',
-//                 doNotEndEvent: true,
-//                 responseText: '“我是魔法少女们的伙伴，为了对抗破坏这个世界的怪物‘失心魔’，寻找有资质的人，赋予他们力量。现在需要你的才能。”'
-//             },
-//             {
-//                 shortText: '接受',
-//                 text: '“好。”\n话音刚落，光芒从你的胸口中发出，又转瞬熄灭，那个白色的生物甩甩尾巴，消失了。',
-//                 responseText: '你感受到了一股不同寻常的感受在体内扩散，或许这就是魔力吧。身体似乎更加轻盈有力。',
-//                 behavior: 'mahoushoujo'
-//             },
-//             {
-//                 shortText: '拒绝',
-//                 text: '你无视了它，继续走着自己的路。',
-//             }
-//         ]
-//     },
-// ];
 const mahoushoujoEvents: EventItem[] = [
     {
         type: 'single',
         thread: 'mahoushoujo',
         id: 'mahoushoujo-begin',
         text: '今天你在外面多逗留了一会，回家时稍稍有些晚了。\n夜色笼罩的街上，你看到前方有一团白色——它对你说话了。\n“请和我签订契约，成为魔法少女吧。这个世界需要你。”',
+        additonal: [
+            {
+                'text': '“希望你能够再考虑一下，这个世界正处在危难之中，”',
+                'conditions': [
+                    makeTokenCondition('ContextEqualsTo', { token: 'mahoushoujo-begin-rejected', count: 1 }),
+                ]
+            }
+        ],
         repeatable: true,
         conditions: [
             // 以下两种写法等价
@@ -85,6 +69,55 @@ const mahoushoujoEvents: EventItem[] = [
             }
         ]
     },
+    {
+        type: 'single',
+        thread: 'mahoushoujo',
+        id: 'mahoushoujo-daily-issue',
+        text: '你感受到一股扭曲扩散而来的涟漪，附近有魔物作乱！',
+        repeatable: true,
+        conditions: [
+            makeTokenCondition('ContextEqualsTo', 'mahoushoujo'),
+        ],
+        options: [
+            {
+                'shortText': '前去剿灭',
+                behavior(ctx) {
+                    // TODO: 此处应当进入战斗
+                    return true;
+                },
+            },
+            {
+                'shortText': '我这样的人真的能做到什么吗',
+                behavior(ctx) {
+
+                    return true;
+                },
+            }
+        ],
+    },
+    {
+        type: 'single',
+        thread: 'mahoushoujo',
+        id: 'mahoushoujo-destiny',
+        triggered: true,
+        text: '体力在一点点流逝，但你并没有注意到；眼前渐渐模糊，扭曲的影子在周身起舞，耳畔充斥着难辨的呓语，胸口变得冰冷，思维已经破碎，啊，你听清了它们在说什么：…破坏…杀戮…痛苦…一切…所有人…绝望…',
+        conditions: [
+            makeTokenCondition('ContextEqualsTo', 'mahoushoujo'),
+
+            makePlayerPropertyCondition('ContextLessThan', { SanityCurrent: 3 }),
+        ],
+        options: [
+            {
+                shortText: '抱住面前破碎的世界',
+                responseText: '你感受到最后的情绪从体内弥漫开来，夷平了周遭的一切，但是已经无所谓了；或许会有谁来将你消灭吧，但是已经无所谓了',
+                behavior(ctx) {
+                    ctx.endGame();
+                    return true;
+                },
+            }
+        ],
+
+    }
 ]
 // 主线剧情事件
 export const PrimaryEvents: EventItem[][] = [mahoushoujoEvents];
