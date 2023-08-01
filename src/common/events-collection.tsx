@@ -175,11 +175,6 @@ export const DailyEvents: EventItem[] = [
     {
         type: 'single',
         id: '',
-        text: '',
-    },
-    {
-        type: 'single',
-        id: '',
         text: '某日在驿站看到一个熟悉的背影，你迫不及待的上前打招呼，请问....你是？ 啊，不好意思认错人了。你灰溜溜得离开这个尴尬之地，此地不宜久留，得换个驿站',
     },
     {
