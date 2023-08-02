@@ -1,6 +1,6 @@
 import gameStyles from './Game.module.css'
 // import '../index.css'
-import { Component, For, Show, createEffect, createSignal, onMount } from 'solid-js'
+import { Component, For, Match, Show, Switch, createEffect, createSignal, onMount } from 'solid-js'
 import { createStore } from "solid-js/store";
 import type { StoreNode, Store, SetStoreFunction } from "solid-js/store";
 
@@ -10,6 +10,8 @@ import { GameContext } from '../common/game-context'
 import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, ConditionToken, StackableToken, filterReadyEvents, conditionsCheck } from '../common/events'
 
 import chance from 'chance'
+import { Talent } from '../common/talent';
+import { createTalentCandidates } from '../common/talents-collection';
 
 const GamePage: Component = () => {
 
@@ -46,6 +48,11 @@ const GamePage: Component = () => {
             return reachedTokens().find(t => typeof t === 'object' && t.token === token.token) as R;
         }
     }
+
+    // 游戏开始前阶段
+    type GameState = 'talent-choose' | 'property-upgrade' | 'game-start' | 'game-end';
+    const [gameState, setGameState] = createSignal<GameState>('talent-choose');
+
 
     // 生成用于各种操作闭包的上下文参数
     const makeGameContext = (eventThis?: EventItem): GameContext => ({
@@ -209,19 +216,83 @@ const GamePage: Component = () => {
     onMount(() => {
         // TODO: 为每局游戏生成一个 seed， 作为全局的随机数发生器
         chanceInstance.seed = "Genenrate a seed";
+        const talents = createTalentCandidates(10, chanceInstance);
+        setTalentCadidate(talents);
         const events = createEventCandidates(20, chanceInstance);
         setAvailableEvents(events);
 
     })
 
+    const [talentCadidate, setTalentCadidate] = createSignal<Talent[]>([]);
 
     return <>
-        <StatusBar playerCurrentStatus={currentStatus()} />
-        <EventsHistoryBar history={history()} />
-        <ActionBar options={currentSingleEvent()?.options} handler={handleOption} />
+        <Switch>
+            <Match when={gameState() === 'talent-choose'}>
+                <TelentChoosePage talents={talentCadidate()} talentPoints={3} />
+            </Match>
+            <Match when={gameState() === 'game-start'}>
+                <StatusBar playerCurrentStatus={currentStatus()} />
+                <EventsHistoryBar history={history()} />
+                <ActionBar options={currentSingleEvent()?.options} handler={handleOption} />
+            </Match>
+        </Switch>
     </>
 }
 export default GamePage;
+
+interface TalentChoosePageProps {
+    talents: Talent[];
+    talentPoints: number;
+    // chosen: Talent[];
+}
+const TelentChoosePage: Component<TalentChoosePageProps> = (props) => {
+    const [chosen, setChosen] = createSignal<[Talent, boolean][]>(props.talents.map(t => [t, false]));
+
+    function handleChosen(p: { talent: Talent, index: number }) {
+        const newChosen: [Talent, boolean][] = chosen().map((t, i) => {
+            if (i === p.index) {
+                return [t[0], !t[1]];
+            }
+            return t;
+        });
+        const thisChosen = newChosen[p.index];
+        const prevCost = chosen().filter(t => t[1]).map(t => t[0].cost).reduce((a, b) => a + b, 0);
+        const thisChosenCost = thisChosen[1] ? thisChosen[0].cost : -thisChosen[0].cost;
+
+        if (prevCost + thisChosenCost <= props.talentPoints)
+            setChosen(newChosen);
+    }
+
+    return <>
+        <div class='flex flex-col items-center justify-center'>
+            <h1 class='text-3xl p-5'>选择天赋</h1>
+            <div class='flex flex-row flex-wrap space-x-5'>
+                <For each={chosen()}>
+                    {(talent, index) => <TalentItem talent={talent[0]} chosen={talent[1]} index={index()} onChosen={handleChosen} />}
+                </For>
+                {/* <button class='flex flex-col items-center rounded border p-2 pt-1'>
+                    <span class='text-lg'>天赋1</span>
+                </button>
+                <button class={`flex flex-col items-center rounded border p-2 pt-1`}>
+                    <span class={`text-lg ${gameStyles.underline}`}>天赋2</span>
+                </button> */}
+            </div>
+        </div >
+    </>
+}
+
+interface TalentItemProps {
+    talent: Talent;
+    chosen: boolean;
+    index: number;
+    onChosen: (p: { talent: Talent, index: number }) => void;
+}
+const TalentItem: Component<TalentItemProps> = (props) => {
+
+    return <button class={`flex flex-col items-center rounded border p-2 pt-1`} onClick={[props.onChosen, { talen: props.talent, index: props.index }]}>
+        <span class={`text-lg ${props.chosen ? gameStyles.underline : ''}`}>{props.talent.name}</span>
+    </button>
+}
 
 interface EventHistoryItem {
     text: string;
