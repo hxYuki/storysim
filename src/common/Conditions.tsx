@@ -1,10 +1,10 @@
 import { CharacterStatus } from "./CharacterStatus";
 import { ConditionToken } from "./events";
-import { GameContext } from "./game-context";
+import { StartedGameContext } from "./game-context";
 
 export type Comparison = 'ContextEqualsTo' | 'ContextNotEqualsTo' | 'ContextGreaterThan' | 'ContextLessThan' | 'ContextGreaterOrEqualsTo' | 'ContextLessOrEqualsTo';
 export function makePlayerPropertyCondition(operator: Comparison, conditions: Partial<CharacterStatus>) {
-    return (ctx: GameContext) => {
+    return (ctx: StartedGameContext) => {
         return Object.keys(conditions).map(key => {
             const value = conditions[key as keyof CharacterStatus]!;
             const ctxValue = ctx.playerDetails[key as keyof CharacterStatus];
@@ -27,7 +27,7 @@ export function makePlayerPropertyCondition(operator: Comparison, conditions: Pa
 }
 
 export function makeTokenCondition(operator: Comparison, token: ConditionToken) {
-    return (ctx: GameContext) => {
+    return (ctx: StartedGameContext) => {
         const value = typeof token === 'string' ? 1 : token.count;
         const ctxValue = ctx.tokenGet(token);
         switch (operator) {

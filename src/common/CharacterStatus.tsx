@@ -1,24 +1,48 @@
-export type CharacterStatus = {
+export type CharacterStatus = CharacterStatusProperty & SocialProperty & CharacterBaseProperty & {
+    // Health: number;
+    // HealthCurrent: number;
+    // Sanity: number;
+    // SanityCurrent: number;
+    // Stamina: number;
+    // StaminaCurrent: number;
+
+    // Moral: number;
+    // Money: number;
+    // Age: number;
+
+    // Constitution: number;
+    // Dexterity: number;
+    // Intelligence: number;
+    // Intuition: number;
+    // Luck: number;
+    // Willpower: number;
+
+    Speed: number;
+};
+
+export type CharacterStatusProperty = {
     Health: number;
     HealthCurrent: number;
     Sanity: number;
     SanityCurrent: number;
     Stamina: number;
     StaminaCurrent: number;
+}
 
+export type SocialProperty = {
     Moral: number;
     Money: number;
     Age: number;
+}
 
+export type CharacterBaseProperty = {
     Constitution: number;
     Dexterity: number;
     Intelligence: number;
     Intuition: number;
     Luck: number;
     Willpower: number;
-
-    Speed: number;
-};
+}
 
 // export class MaxCurrentValue
 

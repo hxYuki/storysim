@@ -1,4 +1,4 @@
-import { GameContext } from "./game-context";
+import { StartedGameContext } from "./game-context";
 import chance from 'chance';
 
 export type EventItem = SingleEvent | EventChain;
@@ -40,12 +40,12 @@ export type StackableToken = {
     token: string;
     count: number;
 }
-export type Condition = ((ctx: GameContext) => boolean) | ConditionToken;
+export type Condition = ((ctx: StartedGameContext) => boolean) | ConditionToken;
 export type Conditional = {
     conditions?: Condition[];
 }
 
-export type OptionBehavior = ((ctx: GameContext) => boolean) | ConditionToken | ConditionToken[];
+export type OptionBehavior = ((ctx: StartedGameContext) => boolean) | ConditionToken | ConditionToken[];
 export type OptionItem = {
     // 选项文本
     shortText: string;
@@ -89,7 +89,7 @@ export type EventProperty = {
 
     // 事件出现几率影响因子，增加或减少事件出现的可能性
     // 影响出现几率的百分比，所有事件的基础权重为 1
-    possibility?: (ctx: GameContext) => number;
+    possibility?: (ctx: StartedGameContext) => number;
 } & Conditional
 
 export const InitialEvent: SingleEvent = {
@@ -98,7 +98,7 @@ export const InitialEvent: SingleEvent = {
     text: '你醒了过来，发现自己躺在一间陌生的房间里。'
 }
 
-export function conditionsCheck(conditions: Condition[] | undefined, ctx: GameContext) {
+export function conditionsCheck(conditions: Condition[] | undefined, ctx: StartedGameContext) {
     return conditions?.every(condition => {
         if (typeof condition === 'function') {
             return condition(ctx);
@@ -109,7 +109,7 @@ export function conditionsCheck(conditions: Condition[] | undefined, ctx: GameCo
     }) ?? true
 }
 
-export function filterReadyEvents(events: EventItem[], ctx: GameContext) {
+export function filterReadyEvents(events: EventItem[], ctx: StartedGameContext) {
     let furfilled = events.filter(e =>
         e.repeatable || !ctx.tokenExists(e.id)
     ).filter(e => conditionsCheck(e.conditions, ctx));
@@ -123,7 +123,7 @@ export function filterReadyEvents(events: EventItem[], ctx: GameContext) {
     }
 }
 
-export function weightedPickEvent(events: EventItem[], ctx: GameContext, rng: Chance.Chance): EventItem {
+export function weightedPickEvent(events: EventItem[], ctx: StartedGameContext, rng: Chance.Chance): EventItem {
     let cal = events.map(e => {
         return { event: e, weight: e.possibility ? e.possibility(ctx) : 1 };
     });

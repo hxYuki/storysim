@@ -1,8 +1,19 @@
 import { CharacterStatus } from "./CharacterStatus";
 import { ConditionToken, EventItem, SingleEvent } from "./events";
 
-export interface GameContext {
+export type GameContext = BeforeGameContext | StartedGameContext | AfterGameContext;
+export interface BeforeGameContext {
+    gameState: 'talent-choose' | 'property-upgrade'
+    // availablePropertyPoints: number;
+
+    pushGameState(): void;
+    tokensToAdd(tokens: ConditionToken[]): void;
+    setPropertyUpgradePointsModification(modification: number): void;
+    setPropertyModification(modification: Partial<CharacterStatus>): void;
+}
+export interface StartedGameContext {
     // player: PlayerContext;
+    gameState: 'game-start'
 
     playerDetails: CharacterStatus;
     reachedTokens: ConditionToken[];
@@ -26,6 +37,11 @@ export interface GameContext {
     endGame(): void;
 }
 
+export interface AfterGameContext {
+    gameState: 'game-end'
+
+    newGame(): void;
+}
 // 用于事件上下文的只读上下文（或许有用或许没用吧）
 export interface ReadOnlyGameContext { }
 

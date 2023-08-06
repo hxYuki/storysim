@@ -1,9 +1,9 @@
-import { GameContext } from "./game-context";
+import { BeforeGameContext } from "./game-context";
 
 export type Talent = {
     id: number;
     cost: number;
     name: string;
     description: string;
-    apply: (ctx: GameContext) => void;
+    onApply: (ctx: BeforeGameContext) => void;
 }
