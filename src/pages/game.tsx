@@ -88,6 +88,7 @@ const GamePage: Component = () => {
                     if (currentState === 'property-upgrade') {
                         setGameState('game-start');
                     }
+                    throw new Error('invalid game state used');
                 },
             }
         }
@@ -216,6 +217,7 @@ const GamePage: Component = () => {
 
         setCurrentSingleEvent(nextEvent);
     }
+    // TODO: 移动到 ActionBar组件内，组件现在接受一个Context可以进行操作
     const handleOption = (option?: OptionItem) => {
         if (!option) {
             nextEvent();
@@ -289,7 +291,7 @@ const GamePage: Component = () => {
             <Match when={gameState() === 'game-start'}>
                 <StatusBar playerCurrentStatus={currentStatus()} />
                 <EventsHistoryBar history={history()} />
-                <ActionBar options={currentSingleEvent()?.options} handler={handleOption} />
+                <ActionBar options={currentSingleEvent()?.options} handler={handleOption} gameContext={makeGameContext()} />
             </Match>
         </Switch>
     </>
@@ -444,6 +446,7 @@ const EventsHistoryBar: Component<EventsHistoryBarProps> = (p) => {
 interface ActionBarProps {
     options?: OptionItem[];
     handler: (option?: OptionItem) => void;
+    gameContext: StartedGameContext
 }
 const ActionBar: Component<ActionBarProps> = (props) => {
 
@@ -453,7 +456,9 @@ const ActionBar: Component<ActionBarProps> = (props) => {
         }>
 
             <For each={props.options}>{(option) =>
-                <button onClick={[props.handler, option]} class={` rounded-lg p-2 ${option.doNotEndEvent ? 'border-dotted border-2' : 'border'}`}>{option.shortText}</button>
+                conditionsCheck(option.conditions, props.gameContext) &&
+                (<button onClick={[props.handler, option]} class={` rounded-lg p-2 ${option.doNotEndEvent ? 'border-dotted border-2' : 'border'}`}>{option.shortText}</button>)
+
             }</For>
         </Show>
     </div>
