@@ -10,30 +10,30 @@ export type EventChain = {
     index: number;
 } & EventProperty;
 
-// 与事件链不同，不一定会连续进行
-export type EventThread = {
-    type: 'collection';
-    events: SingleEvent[];
+// // 与事件链不同，不一定会连续进行
+// export type EventThread = {
+//     type: 'collection';
+//     events: SingleEvent[];
 
-    // 将要进行的事件索引
-    index: number;
-    // 将要进行的事件，可以用于计算概率权重等
-    // next: () => SingleEvent | undefined;
-}
+//     // 将要进行的事件索引
+//     index: number;
+//     // 将要进行的事件，可以用于计算概率权重等
+//     // next: () => SingleEvent | undefined;
+// }
 
-export class EventThreadImpl implements EventThread {
-    type: "collection";
-    events: SingleEvent[];
-    index: number;
-    next: () => SingleEvent;
+// export class EventThreadImpl implements EventThread {
+//     type: "collection";
+//     events: SingleEvent[];
+//     index: number;
+//     next: () => SingleEvent;
 
-    constructor() {
-        this.type = "collection";
-        this.events = [];
-        this.index = 0;
-        this.next = () => this.events[this.index];
-    }
-}
+//     constructor() {
+//         this.type = "collection";
+//         this.events = [];
+//         this.index = 0;
+//         this.next = () => this.events[this.index];
+//     }
+// }
 
 export type ConditionToken = string | StackableToken;
 export type StackableToken = {
@@ -71,6 +71,8 @@ export type SingleEvent = {
     additonal?: ({ text: string } & Conditional)[];
 
     options?: OptionItem[];
+    // 事件进行经过的时间
+    timeCost?: number;
 } & EventProperty;
 
 export type EventProperty = {

@@ -1,5 +1,5 @@
 import { makePlayerPropertyCondition, makeTokenCondition } from "./Conditions";
-import { EventChain, EventItem, EventThread, SingleEvent } from "./events";
+import { EventChain, EventItem, SingleEvent } from "./events";
 
 import chance from 'chance';
 
@@ -245,27 +245,27 @@ export const DailyEvents: EventItem[] = [
         type: 'single',
         id: '',
         text: '据专家称，有内部消息表明，房价仍有上涨空间，此轮小幅下降将是最后的购置良机，建议有相关需求的市民抓住此次机会。',
-    },{
+    }, {
         type: 'single',
         id: '',
         text: '你听到了某些奇怪的声音：好饿啊，真的好饿啊，为什么会想吃东西，我昨天不是刚吃了一顿了么怎么今天又饿了呀，得去找点东西吃去。',
-    },{
+    }, {
         type: 'single',
         id: '',
         text: '有个人贩子被当街抓住了，你赶紧凑上前去围观，除了看到被打得半死的人贩子，还有幸听到这该死的勾东西小可爱碧阳的玩意儿出生的东溪...不绝于耳的国粹。',
-    },{
+    }, {
         type: 'single',
         id: '',
         text: '你倚靠在林中一颗老树下，枝繁叶茂，忽然树上掉下来一截树枝，这是为什么呢，需要研究一下么，想了半天没有任何想法，反正是个东西都会掉到低处，把草帽掩了掩眼睛，睡了过去',
-    },{
+    }, {
         type: 'single',
         id: '',
         text: '相传五行相生相克，但也并不全对，如果你的火足够大能烧得东西足够多也不是不能烧他个三天三夜，就一口井的水怎么能扑灭那么大的火呢',
-    },{
+    }, {
         type: 'single',
         id: '',
         text: '你看到一个只穿着一件儿破衣的男子眼里泛着红光与四周充满杀气,手拿着刃都是破的菜刀迎面走来，你并没有搭理还有更重要的事情要去做，这人恩怨就交给别人处理吧',
-    },{
+    }, {
         type: 'single',
         id: '',
         text: '踢踏踢踏雨滴打在瓦片上，远处已被雨水雾气所遮蔽，不停的雷声与不断地闪电惊动了几座城的人，这这难道是有人在斗法么，雷法的最高境界也不过如此吧。',

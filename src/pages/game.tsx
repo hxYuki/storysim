@@ -12,32 +12,36 @@ import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, Cond
 import chance from 'chance'
 import { Talent } from '../common/talent';
 import { createTalentCandidates } from '../common/talents-collection';
+import { Relic } from '../common/relic';
+import { Buff } from '../common/Buff';
+
+// 经过 1 年所消耗的时间
+const AgeTimeUnit = 10;
 
 const GamePage: Component = () => {
 
     const chanceInstance = chance('TODO: initialize seed later');
-
     const defaultStatus = createEmptyStatus();
+
     // 基础（最大）属性值 与 当前属性值
-    // const [status, setStatus] = createSignal<CharacterStatus>(defaultStatus);
     const [currentStatus, setCurrentStatus] = createSignal<CharacterStatus>(defaultStatus);
 
-    const [history, setHistory] = createSignal<EventHistoryItem[]>([
-        { text: '你醒来了', isChoice: false }
-    ]);
+    const [timeAccumulated, setTimeAccumulated] = createSignal<number>(0);
+    // 物品栏
+    const [inventory, setInventory] = createSignal<Relic[]>([]);
+
+    // 持久化效果
+    const [buffs, setBuffs] = createSignal<Buff[]>([]);
+    const [buffsToAdd, setBuffsToAdd] = createSignal<Buff[]>([]);
+
+    const [history, setHistory] = createSignal<EventHistoryItem[]>([]);
 
     // 候选事件列表
     const [availableEvents, setAvailableEvents] = createSignal<EventItem[]>([]);
-    // 对应索引的事件线的下一个事件的索引
-    // const [availableEventProgress, setAvailableEventProgress] = createSignal<number[]>([]);
 
     // 当前正在进行的事件
-    // const [currentEventIndex, setCurrentEventIndex] = createSignal<number>(-1);
     const [currentEventItem, setCurrentEventItem] = createSignal<EventItem>();
     const [currentSingleEvent, setCurrentSingleEvent] = createSignal<SingleEvent>();
-
-    // 当前正在进行的事件链的索引
-    // const [currentEventChainIndex, setCurrentEventChainIndex] = createSignal<number>(0);
 
     // 当前已经满足的事件条件标记
     const [reachedTokens, setReachedTokens] = createSignal<ConditionToken[]>([]);
@@ -102,6 +106,9 @@ const GamePage: Component = () => {
         currentEvent: currentSingleEvent()!,
 
         thisEvent: eventThis,
+        time() {
+            return timeAccumulated();
+        },
 
         tokenSet(token, stackable = false) {
             const t = findToken(token) as StackableToken;

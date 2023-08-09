@@ -23,6 +23,8 @@ export interface StartedGameContext {
     // 在事件上下文的回调中用于获取该事件
     thisEvent?: EventItem;
 
+    time: () => number;
+
     playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
     playerStatsSet: (stats: Partial<CharacterStatus>) => void;
 
