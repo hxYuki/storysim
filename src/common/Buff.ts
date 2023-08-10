@@ -13,7 +13,7 @@ export interface Buff {
 }
 
 export class Buff {
-    leap?: number;
+    private leap?: number;
     tick(ctx: StartedGameContext): boolean {
         if (!this.leap) {
             this.leap = ctx.time();

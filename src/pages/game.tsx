@@ -25,8 +25,25 @@ const GamePage: Component = () => {
 
     // 基础（最大）属性值 与 当前属性值
     const [currentStatus, setCurrentStatus] = createSignal<CharacterStatus>(defaultStatus);
+    function updateStatus(newProps: Partial<CharacterStatus>) {
+        setCurrentStatus(s => ({
+            ...s,
+            ...newProps
+        }));
+    }
+    function updateStatusBy(offsets: Partial<CharacterStatus>) {
+        Object.keys(offsets).forEach(k => {
+            const key = k as keyof CharacterStatus;
+            offsets[key] = offsets[key]! + currentStatus()[key];
+        })
+        setCurrentStatus(s => ({
+            ...s,
+            ...offsets
+        }));
+    }
 
     const [timeAccumulated, setTimeAccumulated] = createSignal<number>(0);
+
     // 物品栏
     const [inventory, setInventory] = createSignal<Relic[]>([]);
 
@@ -69,16 +86,7 @@ const GamePage: Component = () => {
                 setPropertyUpgradePointsModification(modification) {
                     setPropertyPoints(p => p + modification);
                 },
-                setPropertyModification(modification) {
-                    Object.keys(modification).forEach(k => {
-                        const key = k as keyof CharacterStatus;
-                        modification[key] = modification[key]! + currentStatus()[key];
-                    })
-                    setCurrentStatus(s => ({
-                        ...s,
-                        ...modification
-                    }));
-                },
+                setPropertyModification: updateStatusBy,
                 tokensToAdd(tokens) {
                     tokens.forEach(nt => {
                         insertToken(nt);
@@ -160,9 +168,7 @@ const GamePage: Component = () => {
         playerStatSet: (stat, value) => {
             setCurrentStatus(s => ({ ...s, [stat]: value }))
         },
-        playerStatsSet: (stats) => {
-            setCurrentStatus(s => ({ ...s, ...stats }))
-        },
+        playerStatsSet: updateStatus,
 
         achievementReached: (achievement: string) => {
             console.error('TODO: achievementReached', 'not implemented');
@@ -190,6 +196,24 @@ const GamePage: Component = () => {
     const nextEvent = () => {
         let nextEvent: SingleEvent;
         const currentEvent = currentEventItem();
+
+        const currentSingle = currentSingleEvent();
+        if (currentSingle) {
+            // 事件结束 累计时间，结算 buff 效果
+            // const timeAcc = timeAccumulated();
+            setTimeAccumulated(t => t + (currentSingle.timeCost ?? 1));
+            updateStatus({ 'Age': Math.floor(timeAccumulated() / AgeTimeUnit) })
+
+            const ended = buffs().map(b => ({
+                buff: b,
+                isOver: b.tick(makeGameContext())
+            })).filter(b => b.isOver).map(b => b.buff);
+
+            ended.forEach(b => {
+                b.onRemove?.(makeGameContext());
+            })
+            setBuffs(b => b.filter(b => !ended.includes(b)));
+        }
 
         if (currentEvent && currentEvent.id !== '') {
             insertToken(currentEvent.id);

@@ -1,22 +1,4 @@
 export type CharacterStatus = CharacterStatusProperty & SocialProperty & CharacterBaseProperty & {
-    // Health: number;
-    // HealthCurrent: number;
-    // Sanity: number;
-    // SanityCurrent: number;
-    // Stamina: number;
-    // StaminaCurrent: number;
-
-    // Moral: number;
-    // Money: number;
-    // Age: number;
-
-    // Constitution: number;
-    // Dexterity: number;
-    // Intelligence: number;
-    // Intuition: number;
-    // Luck: number;
-    // Willpower: number;
-
     Speed: number;
 };
 
