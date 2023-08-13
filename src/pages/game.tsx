@@ -190,9 +190,15 @@ const GamePage: Component = () => {
         const ot = findToken(token);
         setReachedTokens(t => t.filter(t => t !== ot));
     }
+    let eventHistoryContainer: HTMLUListElement | undefined;
     const insertHistory = (text: string, isChoice: boolean) => {
         setHistory(h => [...h, { text, isChoice }]);
+
+        if (eventHistoryContainer) {
+            eventHistoryContainer.scrollTop = eventHistoryContainer.scrollHeight;
+        }
     }
+
     const nextEvent = () => {
         let nextEvent: SingleEvent;
         const currentEvent = currentEventItem();
@@ -321,7 +327,7 @@ const GamePage: Component = () => {
             </Match>
             <Match when={gameState() === 'game-start'}>
                 <StatusBar playerCurrentStatus={currentStatus()} />
-                <EventsHistoryBar history={history()} />
+                <EventsHistoryBar ref={eventHistoryContainer} history={history()} />
                 <ActionBar options={currentSingleEvent()?.options} handler={handleOption} gameContext={makeGameContext()} />
             </Match>
         </Switch>
@@ -362,12 +368,12 @@ const PropertyUpgradePage: Component<PropertyUpgradePageProps> = (props) => {
         <div class='flex flex-col items-center justify-center'>
             <div class='text-3xl p-5'>属性提升 - 可用点数 {availablePoints()}</div>
             <div class='flex flex-col items-center justify-center space-y-2'>
-                <UpgradePropertyItem name='力量' value={baseProperty().Constitution} setter={makePropertySetter('Constitution')} />
+                <UpgradePropertyItem name='体质' value={baseProperty().Constitution} setter={makePropertySetter('Constitution')} />
                 <UpgradePropertyItem name='灵巧' value={baseProperty().Dexterity} setter={makePropertySetter('Dexterity')} />
                 <UpgradePropertyItem name='智力' value={baseProperty().Intelligence} setter={makePropertySetter('Intelligence')} />
-                <UpgradePropertyItem name='意志' value={baseProperty().Willpower} setter={makePropertySetter('Willpower')} />
-                <UpgradePropertyItem name='直觉' value={baseProperty().Intuition} setter={makePropertySetter('Intuition')} />
                 <UpgradePropertyItem name='幸运' value={baseProperty().Luck} setter={makePropertySetter('Luck')} />
+                <UpgradePropertyItem name='直觉' value={baseProperty().Intuition} setter={makePropertySetter('Intuition')} />
+                <UpgradePropertyItem name='意志' value={baseProperty().Willpower} setter={makePropertySetter('Willpower')} />
             </div>
             <button class='p-2 mt-5 rounded bg-blue-500 text-white' onclick={() => { props.finish(baseProperty()) }}>确认选择</button>
         </div>
@@ -467,9 +473,10 @@ interface EventHistoryItem {
 }
 interface EventsHistoryBarProps {
     history: EventHistoryItem[];
+    ref?: HTMLUListElement;
 }
 const EventsHistoryBar: Component<EventsHistoryBarProps> = (p) => {
-    return <ul class='flex flex-col w-2/3 border rounded-lg p-5 space-y-2 overflow-y-auto'>
+    return <ul ref={p.ref} class='flex flex-col w-2/3 border rounded-lg p-5 space-y-2 overflow-y-auto'>
         <For each={p.history}>{(event) => <EventHistoryItem text={event.text} rightAligned={event.isChoice} />}</For>
     </ul>
 }
@@ -481,7 +488,7 @@ interface ActionBarProps {
 }
 const ActionBar: Component<ActionBarProps> = (props) => {
 
-    return <div class='flex flex-row justify-around w-2/3 border rounded-lg p-5'>
+    return <div class='flex flex-row justify-around w-2/3 border rounded-lg p-5 flex-shrink-0'>
         <Show when={props.options && props.options.length > 0} fallback={
             <button onClick={[props.handler, null]} class='rounded-lg p-2 border'>继续</button>
         }>
@@ -517,21 +524,25 @@ interface StatusBarProps {
     playerCurrentStatus: CharacterStatus;
 }
 const StatusBar: Component<StatusBarProps> = (props) => {
-    return <>
+    return <div class='flex-shrink-0'>
         <ul class={gameStyles.StatusBox}>
-            <PercentBar name='Health' maxValue={props.playerCurrentStatus.Health} current={props.playerCurrentStatus.HealthCurrent} />
-            <PercentBar name='Sanity' maxValue={props.playerCurrentStatus.Sanity} current={props.playerCurrentStatus.SanityCurrent} />
-            <PercentBar name='Stamina' maxValue={props.playerCurrentStatus.Stamina} current={props.playerCurrentStatus.StaminaCurrent} />
+            <PercentBar name='健康' maxValue={props.playerCurrentStatus.Health} current={props.playerCurrentStatus.HealthCurrent} />
+            <PercentBar name='精神' maxValue={props.playerCurrentStatus.Sanity} current={props.playerCurrentStatus.SanityCurrent} />
+            <PercentBar name='耐力' maxValue={props.playerCurrentStatus.Stamina} current={props.playerCurrentStatus.StaminaCurrent} />
+            <li class='m-3'>
+                <span style={{ color: 'gray' }}>年龄: </span>
+                <span>{props.playerCurrentStatus.Age}</span>
+            </li>
         </ul>
         <ul class={gameStyles.StatusBox}>
-            <Status name="Constitution" value={props.playerCurrentStatus.Constitution} />
-            <Status name="Dexterity" value={props.playerCurrentStatus.Dexterity} />
-            <Status name="Intelligence" value={props.playerCurrentStatus.Intelligence} />
-            <Status name="Luck" value={props.playerCurrentStatus.Luck} />
-            <Status name="Intuition" value={props.playerCurrentStatus.Intuition} />
-            <Status name="Willpower" value={props.playerCurrentStatus.Willpower} />
+            <Status name="体质" value={props.playerCurrentStatus.Constitution} />
+            <Status name="灵巧" value={props.playerCurrentStatus.Dexterity} />
+            <Status name="智力" value={props.playerCurrentStatus.Intelligence} />
+            <Status name="幸运" value={props.playerCurrentStatus.Luck} />
+            <Status name="直觉" value={props.playerCurrentStatus.Intuition} />
+            <Status name="意志" value={props.playerCurrentStatus.Willpower} />
             {/* ... */}
-        </ul></>
+        </ul></div>
 }
 
 interface HealthBarProps {
