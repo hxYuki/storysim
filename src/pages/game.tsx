@@ -96,11 +96,11 @@ const GamePage: Component = () => {
                 pushGameState() {
                     if (currentState === 'talent-choose') {
                         setGameState('property-upgrade');
-                    }
-                    if (currentState === 'property-upgrade') {
+                    } else if (currentState === 'property-upgrade') {
                         setGameState('game-start');
                     }
-                    throw new Error('invalid game state used');
+                    else
+                        throw new Error('invalid game state used');
                 },
             }
         }
