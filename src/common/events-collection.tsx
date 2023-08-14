@@ -26,7 +26,8 @@ const mahoushoujoEvents: EventItem[] = [
             //         return false;
             //     return true
             // },
-            makeTokenCondition('ContextLessThan', { token: 'mahoushoujo-begin-rejected', count: 5 })
+            makeTokenCondition('ContextLessThan', { token: 'mahoushoujo-begin-rejected', count: 5 }),
+            makePlayerPropertyCondition('ContextInBetween', { 'Age': [5, 16] })
         ],
         possibility: (ctx) => {
             if (ctx.playerDetails.Willpower < 5) return 1.2;
