@@ -1,5 +1,5 @@
 import { Buff } from "./Buff";
-import { CharacterStatus } from "./CharacterStatus";
+import { CharacterStatus, CharacterStatusProperty } from "./CharacterStatus";
 import { Relic } from "./relic";
 
 export interface Character {
@@ -15,4 +15,20 @@ export interface Character {
 
 export class Character {
 
+    // 由自身向目标施加伤害/治疗
+    damage(target: Character, damages: Partial<CharacterStatusProperty>) {
+
+    }
+    heal(target: Character, damages: Partial<CharacterStatusProperty>) {
+
+    }
+
+    // takeDamage;
+    // takeHealing;
+
+    applyBuff(buff: Buff) { }
+    removeBuff(buff: Buff) { }
+
+    addRelic(relic: Relic) { }
+    dropRelic(relic: Relic) { }
 }

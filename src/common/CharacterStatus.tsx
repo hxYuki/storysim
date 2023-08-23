@@ -1,13 +1,15 @@
-export type CharacterStatus = CharacterStatusProperty & SocialProperty & CharacterBaseProperty & {
+export type CharacterStatus = CharacterStatusProperty & CharacterStatusCurentProperty & SocialProperty & CharacterBaseProperty & {
     Speed: number;
 };
 
 export type CharacterStatusProperty = {
     Health: number;
-    HealthCurrent: number;
     Sanity: number;
-    SanityCurrent: number;
     Stamina: number;
+}
+export type CharacterStatusCurentProperty = {
+    HealthCurrent: number;
+    SanityCurrent: number;
     StaminaCurrent: number;
 }
 
