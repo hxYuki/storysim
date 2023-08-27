@@ -419,6 +419,9 @@ const TelentChoosePage: Component<TalentChoosePageProps> = (props) => {
         setCurrentChosen(() => chosen().filter(t => t[1]).map(t => t[0]));
     })
 
+    const [lastChoose, setLastChoose] = createSignal<Talent>();
+    const [error, setError] = createSignal<string | undefined>(undefined);
+
     function handleChoose(p: { talent: Talent, index: number }) {
         const newChosen: [Talent, boolean][] = chosen().map((t, i) => {
             if (i === p.index) {
@@ -427,26 +430,46 @@ const TelentChoosePage: Component<TalentChoosePageProps> = (props) => {
             return t;
         });
         const thisChosen = newChosen[p.index];
+
+        setLastChoose(thisChosen[0]);
+
         const prevCost = chosen().filter(t => t[1]).map(t => t[0].cost).reduce((a, b) => a + b, 0);
         const thisChosenCost = thisChosen[1] ? thisChosen[0].cost : -thisChosen[0].cost;
 
         if (prevCost + thisChosenCost <= props.talentPoints) {
             setChosen(newChosen);
             setCurrentTalentPoints(props.talentPoints - prevCost - thisChosenCost);
+
+            setError(undefined);
         }
         else {
             // TODO: 提示失败原因：超出点数
+            if (!thisChosen[1]) {
+                setError('取消选择后点数不足');
+            } else {
+                setError('剩余天赋点数不足');
+            }
+
         }
     }
 
     return <>
         <div class='flex flex-col items-center justify-center'>
-            <h1 class='text-3xl p-5'>选择天赋 - 可用点数: {currentTalentPoints()}</h1>
+            <h1 class='text-3xl m-5'>选择天赋 - 可用点数: {currentTalentPoints()}</h1>
+            <Show when={error()}>
+                <p class='mb-5 w-96 text-red-400'>{error()}</p>
+            </Show>
             <div class='flex flex-row flex-wrap space-x-5'>
                 <For each={chosen()}>
                     {(talent, index) => <TalentItem talent={talent[0]} chosen={talent[1]} index={index()} onChosen={handleChoose} />}
                 </For>
             </div>
+
+            <Show when={lastChoose()}>
+                <div class='mt-5'>
+                    <p class='border rounded p-3 w-96 text-gray-400 border-gray-500'>{lastChoose()?.description}</p>
+                </div>
+            </Show>
             <button class='p-2 mt-5 rounded bg-blue-500 text-white' onclick={() => {
                 props.finish(currentChosen());
             }}>确认选择</button>
