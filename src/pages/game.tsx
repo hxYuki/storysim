@@ -346,17 +346,30 @@ const PropertyUpgradePage: Component<PropertyUpgradePageProps> = (props) => {
 
     const makePropertySetter = (property: keyof CharacterBaseProperty) => {
         return (value: number) => {
-            if (value < 1 || value > 30) return;
+            if (value < props.baseProperty[property] || value > 30) {
+                if (value > 30)
+                    setError('难道你想成为神吗？')
+                else
+                    setError('属性值不能低于初始值')
+                return;
+            }
+
             if (value > baseProperty()[property]) {
-                if (availablePoints() <= 0) return;
+                if (availablePoints() <= 0) {
+                    setError('可用点数不足')
+                    return;
+                }
                 setAvailablePoints(p => p - 1);
             } else {
                 setAvailablePoints(p => p + 1);
             }
-
+            setError(undefined);
             setBaseProperty(p => ({ ...p, [property]: value }))
         }
     }
+
+    const [error, setError] = createSignal<string | undefined>(undefined);
+
     createEffect(() => {
         setBaseProperty(props.baseProperty);
     })
@@ -367,6 +380,9 @@ const PropertyUpgradePage: Component<PropertyUpgradePageProps> = (props) => {
     return <>
         <div class='flex flex-col items-center justify-center'>
             <div class='text-3xl p-5'>属性提升 - 可用点数 {availablePoints()}</div>
+            <Show when={error()}>
+                <p class={`mb-5 w-96 text-red-400 ${gameStyles['float-item']}`}>{error()}</p>
+            </Show>
             <div class='flex flex-col items-center justify-center space-y-2'>
                 <UpgradePropertyItem name='体质' value={baseProperty().Constitution} setter={makePropertySetter('Constitution')} />
                 <UpgradePropertyItem name='灵巧' value={baseProperty().Dexterity} setter={makePropertySetter('Dexterity')} />
@@ -457,7 +473,7 @@ const TelentChoosePage: Component<TalentChoosePageProps> = (props) => {
         <div class='flex flex-col items-center justify-center'>
             <h1 class='text-3xl m-5'>选择天赋 - 可用点数: {currentTalentPoints()}</h1>
             <Show when={error()}>
-                <p class='mb-5 w-96 text-red-400'>{error()}</p>
+                <p class={`mb-5 w-96 text-red-400 ${gameStyles['float-item']}`}>{error()}</p>
             </Show>
             <div class='flex flex-row flex-wrap space-x-5'>
                 <For each={chosen()}>
