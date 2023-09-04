@@ -15,7 +15,7 @@ export function makePlayerPropertyCondition<
     return (ctx: StartedGameContext) => {
         return Object.keys(conditions).map(key => {
             const value = conditions[key as keyof CharacterStatus]!;
-            const ctxValue = ctx.playerDetails[key as keyof CharacterStatus];
+            const ctxValue = ctx.player.details[key as keyof CharacterStatus];
             switch (operator) {
                 case 'ContextEqualsTo':
                     return ctxValue === value;

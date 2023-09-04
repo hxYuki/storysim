@@ -109,7 +109,17 @@ const GamePage: Component = () => {
     }
     const makeGameContext = (eventThis?: EventItem): StartedGameContext => ({
         gameState: 'game-start',
-        playerDetails: currentStatus(),
+        player: {
+            details: currentStatus(),
+            statSet: (stat, value) => {
+                setCurrentStatus(s => ({ ...s, [stat]: value }))
+            },
+            statsSet: updateStatus,
+            createDiceContext: () => {
+                throw new Error('not implemented');
+            }
+        },
+        // playerDetails: currentStatus(),
         reachedTokens: reachedTokens(),
         currentEvent: currentSingleEvent()!,
 
@@ -165,10 +175,10 @@ const GamePage: Component = () => {
                 }
             }
         },
-        playerStatSet: (stat, value) => {
-            setCurrentStatus(s => ({ ...s, [stat]: value }))
-        },
-        playerStatsSet: updateStatus,
+        // playerStatSet: (stat, value) => {
+        //     setCurrentStatus(s => ({ ...s, [stat]: value }))
+        // },
+        // playerStatsSet: updateStatus,
 
         achievementReached: (achievement: string) => {
             console.error('TODO: achievementReached', 'not implemented');

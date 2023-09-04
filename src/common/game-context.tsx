@@ -1,4 +1,5 @@
 import { CharacterStatus } from "./CharacterStatus";
+import { DiceContext } from "./Dice";
 import { ConditionToken, EventItem, SingleEvent } from "./events";
 
 export type GameContext = BeforeGameContext | StartedGameContext | AfterGameContext;
@@ -15,7 +16,9 @@ export interface StartedGameContext {
     // player: PlayerContext;
     gameState: 'game-start'
 
-    playerDetails: CharacterStatus;
+    player: CharacterContext;
+
+    // playerDetails: CharacterStatus;
     reachedTokens: ConditionToken[];
     // 当前进行的事件
     currentEvent: SingleEvent;
@@ -25,8 +28,8 @@ export interface StartedGameContext {
 
     time: () => number;
 
-    playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
-    playerStatsSet: (stats: Partial<CharacterStatus>) => void;
+    // playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
+    // playerStatsSet: (stats: Partial<CharacterStatus>) => void;
 
     tokenSet: (token: string, stackable?: boolean) => void;
     // 0: 不存在，>=1: 存在，层数
@@ -47,10 +50,12 @@ export interface AfterGameContext {
 // 用于事件上下文的只读上下文（或许有用或许没用吧）
 export interface ReadOnlyGameContext { }
 
-export interface PlayerContext {
-    playerDetails: CharacterStatus;
-    playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
-    playerStatsSet: (stats: Partial<CharacterStatus>) => void;
+export interface CharacterContext {
+    details: CharacterStatus;
+    statSet: (stat: keyof CharacterStatus, value: number) => void;
+    statsSet: (stats: Partial<CharacterStatus>) => void;
+
+    createDiceContext(): DiceContext;
 }
 
 export interface EventContext {
