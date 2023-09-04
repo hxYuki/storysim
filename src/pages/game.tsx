@@ -14,6 +14,7 @@ import { Talent } from '../common/talent';
 import { createTalentCandidates } from '../common/talents-collection';
 import { Relic } from '../common/relic';
 import { Buff } from '../common/Buff';
+import { Character } from '../common/Character';
 
 // 经过 1 年所消耗的时间
 const AgeTimeUnit = 10;
@@ -23,33 +24,19 @@ const GamePage: Component = () => {
     const chanceInstance = chance('TODO: initialize seed later');
     const defaultStatus = createEmptyStatus();
 
+    const player = new Character();
     // 基础（最大）属性值 与 当前属性值
-    const [currentStatus, setCurrentStatus] = createSignal<CharacterStatus>(defaultStatus);
-    function updateStatus(newProps: Partial<CharacterStatus>) {
-        setCurrentStatus(s => ({
-            ...s,
-            ...newProps
-        }));
-    }
-    function updateStatusBy(offsets: Partial<CharacterStatus>) {
-        Object.keys(offsets).forEach(k => {
-            const key = k as keyof CharacterStatus;
-            offsets[key] = offsets[key]! + currentStatus()[key];
-        })
-        setCurrentStatus(s => ({
-            ...s,
-            ...offsets
-        }));
-    }
+    const [currentStatus, setCurrentStatus] = player.propertyGS;
+    // 持久化效果
+    const [buffsToAdd, setBuffsToAdd] = createSignal<Buff[]>([]);
+    const [buffs, setBuffs] = player.buffsGS;
+
+    // 成员函数也不能保证自己的 context (this), 所以需要绑定
+    const updatePlayerStatus = player.statsSet.bind(player);
+    const updatePlayerStatusBy = player.statsModifyBy.bind(player);
 
     const [timeAccumulated, setTimeAccumulated] = createSignal<number>(0);
 
-    // 物品栏
-    const [inventory, setInventory] = createSignal<Relic[]>([]);
-
-    // 持久化效果
-    const [buffs, setBuffs] = createSignal<Buff[]>([]);
-    const [buffsToAdd, setBuffsToAdd] = createSignal<Buff[]>([]);
 
     const [history, setHistory] = createSignal<EventHistoryItem[]>([]);
 
@@ -86,7 +73,7 @@ const GamePage: Component = () => {
                 setPropertyUpgradePointsModification(modification) {
                     setPropertyPoints(p => p + modification);
                 },
-                setPropertyModification: updateStatusBy,
+                setPropertyModification: updatePlayerStatusBy,
                 tokensToAdd(tokens) {
                     tokens.forEach(nt => {
                         insertToken(nt);
@@ -109,16 +96,17 @@ const GamePage: Component = () => {
     }
     const makeGameContext = (eventThis?: EventItem): StartedGameContext => ({
         gameState: 'game-start',
-        player: {
-            details: currentStatus(),
-            statSet: (stat, value) => {
-                setCurrentStatus(s => ({ ...s, [stat]: value }))
-            },
-            statsSet: updateStatus,
-            createDiceContext: () => {
-                throw new Error('not implemented');
-            }
-        },
+        player: player,
+        // {
+        //     properties: currentStatus(),
+        //     statSet: (stat, value) => {
+        //         setCurrentStatus(s => ({ ...s, [stat]: value }))
+        //     },
+        //     statsSet: updateStatus,
+        //     createDiceContext: () => {
+        //         throw new Error('not implemented');
+        //     }
+        // },
         // playerDetails: currentStatus(),
         reachedTokens: reachedTokens(),
         currentEvent: currentSingleEvent()!,
@@ -218,7 +206,7 @@ const GamePage: Component = () => {
             // 事件结束 累计时间，结算 buff 效果
             // const timeAcc = timeAccumulated();
             setTimeAccumulated(t => t + (currentSingle.timeCost ?? 1));
-            updateStatus({ 'Age': Math.floor(timeAccumulated() / AgeTimeUnit) })
+            player.statsSet({ 'Age': Math.floor(timeAccumulated() / AgeTimeUnit) })
 
             const ended = buffs().map(b => ({
                 buff: b,

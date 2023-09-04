@@ -1,5 +1,8 @@
+import { createSignal } from "solid-js";
 import { Buff } from "./Buff";
-import { CharacterStatus, CharacterStatusProperty } from "./CharacterStatus";
+import { CharacterBaseProperty, CharacterStatus, CharacterStatusCurentProperty, CharacterStatusProperty, SocialProperty, createEmptyStatus } from "./CharacterStatus";
+import { DiceContext } from "./Dice";
+import { CharacterOperation } from "./game-context";
 import { Relic } from "./relic";
 
 export interface Character {
@@ -7,13 +10,51 @@ export interface Character {
     id: number;
     name: string;
 
-    properties: CharacterStatus;
-    inventory: Relic[];
+    properties: () => CharacterStatus;
+    inventory: () => Relic[];
 
-    buffs: Buff[];
+    buffs: () => Buff[];
 }
 
-export class Character {
+export class Character implements CharacterOperation {
+    propertyGS;
+    inventoryGS;
+    buffsGS;
+    // private propSetter;
+    constructor(id?: number, name?: string) {
+        this.id = id ?? 0;
+        this.name = name ?? '玩家';
+        this.propertyGS = createSignal<CharacterStatus>(createEmptyStatus());
+        this.inventoryGS = createSignal<Relic[]>([]);
+        this.buffsGS = createSignal<Buff[]>([]);
+        this.properties = this.propertyGS[0];
+        this.inventory = this.inventoryGS[0];
+        this.buffs = this.buffsGS[0];
+    }
+    createDiceContext(): DiceContext {
+        throw new Error("Method not implemented.");
+    }
+
+    statSet(stat: keyof CharacterStatus, value: number) {
+        this.propertyGS[1](s => ({ ...s, [stat]: value }))
+    };
+    statsSet(newProps: Partial<CharacterStatus>) {
+        this.propertyGS[1](s => ({
+            ...s,
+            ...newProps
+        }));
+    }
+    statsModifyBy(offsets: Partial<CharacterStatus>) {
+        console.log('character:', this)
+        Object.keys(offsets).forEach(k => {
+            const key = k as keyof CharacterStatus;
+            offsets[key] = offsets[key]! + this.propertyGS[0]()[key];
+        })
+        this.propertyGS[1](s => ({
+            ...s,
+            ...offsets
+        }));
+    }
 
     // 由自身向目标施加伤害/治疗
     damage(target: Character, damages: Partial<CharacterStatusProperty>) {

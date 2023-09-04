@@ -30,7 +30,7 @@ const mahoushoujoEvents: EventItem[] = [
             makePlayerPropertyCondition('ContextInBetween', { 'Age': [5, 16] })
         ],
         possibility: (ctx) => {
-            if (ctx.player.details.Willpower < 5) return 1.2;
+            if (ctx.player.properties().Willpower < 5) return 1.2;
             else return 1;
         },
         options: [
@@ -55,7 +55,7 @@ const mahoushoujoEvents: EventItem[] = [
                     ctx.tokenRemove('trival-person');
                     ctx.tokenSet('mahoushoujo');
                     ctx.thisEvent!.repeatable = false;
-                    const status = ctx.player.details;
+                    const status = ctx.player.properties();
                     ctx.player.statsSet({ Health: status.Health + 10, HealthCurrent: status.HealthCurrent + 10, 'Constitution': status.Constitution + 5, 'Dexterity': status.Dexterity + 3, 'Intuition': status.Intuition + 5 });
                     return true;
                 },

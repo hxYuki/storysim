@@ -1,6 +1,7 @@
 import { CharacterStatus } from "./CharacterStatus";
 import { DiceContext } from "./Dice";
 import { ConditionToken, EventItem, SingleEvent } from "./events";
+import { Character } from './Character';
 
 export type GameContext = BeforeGameContext | StartedGameContext | AfterGameContext;
 export interface BeforeGameContext {
@@ -16,7 +17,7 @@ export interface StartedGameContext {
     // player: PlayerContext;
     gameState: 'game-start'
 
-    player: CharacterContext;
+    player: Character;
 
     // playerDetails: CharacterStatus;
     reachedTokens: ConditionToken[];
@@ -50,8 +51,8 @@ export interface AfterGameContext {
 // 用于事件上下文的只读上下文（或许有用或许没用吧）
 export interface ReadOnlyGameContext { }
 
-export interface CharacterContext {
-    details: CharacterStatus;
+export interface CharacterOperation {
+    //     // properties: CharacterStatus;
     statSet: (stat: keyof CharacterStatus, value: number) => void;
     statsSet: (stats: Partial<CharacterStatus>) => void;
 
