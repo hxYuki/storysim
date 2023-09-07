@@ -4,6 +4,7 @@ import { CharacterBaseProperty, CharacterStatus, CharacterStatusCurentProperty, 
 import { DiceContext } from "./Dice";
 import { CharacterOperation } from "./game-context";
 import { Relic } from "./relic";
+import { CharacterAction } from "./CharacterAction";
 
 export interface Character {
     // id 为 0 时表示玩家
@@ -14,6 +15,8 @@ export interface Character {
     inventory: () => Relic[];
 
     buffs: () => Buff[];
+
+    actionList: () => CharacterAction[];
 }
 
 export class Character implements CharacterOperation {
@@ -21,10 +24,10 @@ export class Character implements CharacterOperation {
     inventoryGS;
     buffsGS;
     // private propSetter;
-    constructor(id?: number, name?: string) {
+    constructor(id?: number, name?: string, defaultStatus?: CharacterStatus) {
         this.id = id ?? 0;
         this.name = name ?? '玩家';
-        this.propertyGS = createSignal<CharacterStatus>(createEmptyStatus());
+        this.propertyGS = createSignal<CharacterStatus>(defaultStatus ?? createEmptyStatus());
         this.inventoryGS = createSignal<Relic[]>([]);
         this.buffsGS = createSignal<Buff[]>([]);
         this.properties = this.propertyGS[0];
@@ -45,7 +48,6 @@ export class Character implements CharacterOperation {
         }));
     }
     statsModifyBy(offsets: Partial<CharacterStatus>) {
-        console.log('character:', this)
         Object.keys(offsets).forEach(k => {
             const key = k as keyof CharacterStatus;
             offsets[key] = offsets[key]! + this.propertyGS[0]()[key];
@@ -55,6 +57,10 @@ export class Character implements CharacterOperation {
             ...offsets
         }));
     }
+
+    addActions(actions: CharacterAction[]) { }
+    removeActions(actions: number[]) { }
+    disableActions(actionsId: number[]) { }
 
     // 由自身向目标施加伤害/治疗
     damage(target: Character, damages: Partial<CharacterStatusProperty>) {
