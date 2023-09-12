@@ -15,6 +15,7 @@ import { createTalentCandidates } from '../common/talents-collection';
 import { Relic } from '../common/relic';
 import { Buff } from '../common/Buff';
 import { Character } from '../common/Character';
+import { BattlePage } from './subpages/Battle';
 
 // 经过 1 年所消耗的时间
 const AgeTimeUnit = 10;
@@ -37,8 +38,7 @@ const GamePage: Component = () => {
 
     const [timeAccumulated, setTimeAccumulated] = createSignal<number>(0);
 
-
-    const [history, setHistory] = createSignal<EventHistoryItem[]>([]);
+    const [HistoryBar, insertHistory] = useEventHistoryBar();
 
     // 候选事件列表
     const [availableEvents, setAvailableEvents] = createSignal<EventItem[]>([]);
@@ -58,7 +58,7 @@ const GamePage: Component = () => {
     }
 
     // 游戏开始前阶段
-    type GameState = 'talent-choose' | 'property-upgrade' | 'game-start' | 'game-end';
+    type GameState = 'talent-choose' | 'property-upgrade' | 'game-start' | 'game-end' | 'battle';
     const [gameState, setGameState] = createSignal<GameState>('talent-choose');
 
     // 玩家自由分配属性点数
@@ -97,17 +97,7 @@ const GamePage: Component = () => {
     const makeGameContext = (eventThis?: EventItem): StartedGameContext => ({
         gameState: 'game-start',
         player: player,
-        // {
-        //     properties: currentStatus(),
-        //     statSet: (stat, value) => {
-        //         setCurrentStatus(s => ({ ...s, [stat]: value }))
-        //     },
-        //     statsSet: updateStatus,
-        //     createDiceContext: () => {
-        //         throw new Error('not implemented');
-        //     }
-        // },
-        // playerDetails: currentStatus(),
+
         reachedTokens: reachedTokens(),
         currentEvent: currentSingleEvent()!,
 
@@ -115,6 +105,9 @@ const GamePage: Component = () => {
         time() {
             return timeAccumulated();
         },
+
+        startBattle: (sceneId: number) => { },
+        endBattle: () => { },
 
         tokenSet(token, stackable = false) {
             const t = findToken(token) as StackableToken;
@@ -188,14 +181,8 @@ const GamePage: Component = () => {
         const ot = findToken(token);
         setReachedTokens(t => t.filter(t => t !== ot));
     }
-    let eventHistoryContainer: HTMLUListElement | undefined;
-    const insertHistory = (text: string, isChoice: boolean) => {
-        setHistory(h => [...h, { text, isChoice }]);
 
-        if (eventHistoryContainer) {
-            eventHistoryContainer.scrollTop = eventHistoryContainer.scrollHeight;
-        }
-    }
+
 
     const nextEvent = () => {
         let nextEvent: SingleEvent;
@@ -325,10 +312,14 @@ const GamePage: Component = () => {
             </Match>
             <Match when={gameState() === 'game-start'}>
                 <StatusBar playerCurrentStatus={currentStatus()} />
-                <EventsHistoryBar ref={eventHistoryContainer} history={history()} />
+                <HistoryBar />
                 <ActionBar options={currentSingleEvent()?.options} handler={handleOption} gameContext={makeGameContext()} />
             </Match>
+            <Match when={gameState() === 'battle'}>
+
+            </Match>
         </Switch>
+        {/* <BattlePage /> */}
     </>
 }
 export default GamePage;
@@ -502,6 +493,26 @@ const TalentItem: Component<TalentItemProps> = (props) => {
     return <button class={`flex flex-col items-center rounded border p-2 pt-1`} onClick={[props.onChosen, { talen: props.talent, index: props.index }]}>
         <span class={`text-lg ${props.chosen ? gameStyles.underline : ''}`}>{props.talent.name}</span>
     </button>
+}
+
+export function useEventHistoryBar(): [Component, (text: string, isChoice: boolean) => void] {
+    const [history, setHistory] = createSignal<EventHistoryItem[]>([]);
+
+    let eventHistoryContainer: HTMLUListElement | undefined;
+    const insertHistory = (text: string, isChoice: boolean) => {
+        setHistory(h => [...h, { text, isChoice }]);
+
+        if (eventHistoryContainer) {
+            eventHistoryContainer.scrollTop = eventHistoryContainer.scrollHeight;
+        }
+    }
+
+    return [
+        () => <EventsHistoryBar ref={eventHistoryContainer} history={history()} />,
+        insertHistory,
+    ]
+
+
 }
 
 interface EventHistoryItem {
