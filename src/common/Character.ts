@@ -4,7 +4,7 @@ import { CharacterBaseProperty, CharacterStatus, CharacterStatusCurentProperty, 
 import { DiceContext } from "./Dice";
 import { CharacterOperation } from "./game-context";
 import { Relic } from "./relic";
-import { CharacterAction } from "./CharacterAction";
+import { AttackAction, CharacterAction, DefendAction, DodgeAction, EscapeAction } from "./CharacterAction";
 
 export interface Character {
     // id 为 0 时表示玩家
@@ -23,6 +23,7 @@ export class Character implements CharacterOperation {
     propertyGS;
     inventoryGS;
     buffsGS;
+    actionListGS;
     // private propSetter;
     constructor(id?: number, name?: string, defaultStatus?: CharacterStatus) {
         this.id = id ?? 0;
@@ -30,10 +31,17 @@ export class Character implements CharacterOperation {
         this.propertyGS = createSignal<CharacterStatus>(defaultStatus ?? createEmptyStatus());
         this.inventoryGS = createSignal<Relic[]>([]);
         this.buffsGS = createSignal<Buff[]>([]);
+        this.actionListGS = createSignal<CharacterAction[]>([AttackAction, DefendAction, DodgeAction, EscapeAction]);
         this.properties = this.propertyGS[0];
         this.inventory = this.inventoryGS[0];
         this.buffs = this.buffsGS[0];
+        this.actionList = this.actionListGS[0];
     }
+
+    replaceActionList(actions: CharacterAction[]) {
+        this.actionListGS[1](actions);
+    }
+
     createDiceContext(): DiceContext {
         throw new Error("Method not implemented.");
     }
@@ -58,9 +66,23 @@ export class Character implements CharacterOperation {
         }));
     }
 
-    addActions(actions: CharacterAction[]) { }
-    removeActions(actions: number[]) { }
-    disableActions(actionsId: number[]) { }
+    addActions(actions: CharacterAction[]) {
+        this.actionListGS[1](actions => [...actions, ...actions]);
+    }
+    removeActions(actionsId: number[]) {
+        this.actionListGS[1](actions => actions.filter(a => !actionsId.includes(a.id)));
+    }
+    disableActions(actionsId: number[]) {
+        this.actionListGS[1](actions => actions.map(a => {
+            if (actionsId.includes(a.id)) {
+                return {
+                    ...a,
+                    disabled: true,
+                }
+            }
+            return a;
+        }));
+    }
 
     // 由自身向目标施加伤害/治疗
     damage(target: Character, damages: Partial<CharacterStatusProperty>) {
