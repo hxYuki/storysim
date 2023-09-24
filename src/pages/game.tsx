@@ -99,6 +99,11 @@ const GamePage: Component = () => {
     }
     const makeGameContext = (eventThis?: EventItem): StartedGameContext => ({
         gameState: 'game-start',
+        chanceInstance: chanceInstance,
+        createDiceContext(character) {
+            // TODO:
+            throw new Error('Method not implemented.');
+        },
         player: player,
         currentScene: battleScene(),
 

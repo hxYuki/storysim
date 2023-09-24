@@ -42,10 +42,6 @@ export class Character implements CharacterOperation {
         this.actionListGS[1](actions);
     }
 
-    createDiceContext(): DiceContext {
-        throw new Error("Method not implemented.");
-    }
-
     statSet(stat: keyof CharacterStatus, value: number) {
         this.propertyGS[1](s => ({ ...s, [stat]: value }))
     };

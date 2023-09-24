@@ -17,7 +17,8 @@ export interface BeforeGameContext {
 export interface StartedGameContext {
     // player: PlayerContext;
     gameState: 'game-start'
-
+    chanceInstance: Chance.Chance;
+    createDiceContext: (character: Character) => DiceContext;
     player: Character;
 
     currentScene: Scene | undefined;
@@ -59,7 +60,6 @@ export interface CharacterOperation {
     statSet: (stat: keyof CharacterStatus, value: number) => void;
     statsSet: (stats: Partial<CharacterStatus>) => void;
 
-    createDiceContext(): DiceContext;
 }
 
 export interface EventContext {
