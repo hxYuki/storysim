@@ -2,6 +2,7 @@ import { CharacterStatus } from "./CharacterStatus";
 import { DiceContext } from "./Dice";
 import { ConditionToken, EventItem, SingleEvent } from "./events";
 import { Character } from './Character';
+import { Scene } from "./Scene";
 
 export type GameContext = BeforeGameContext | StartedGameContext | AfterGameContext;
 export interface BeforeGameContext {
@@ -19,6 +20,8 @@ export interface StartedGameContext {
 
     player: Character;
 
+    currentScene: Scene | undefined;
+
     // playerDetails: CharacterStatus;
     reachedTokens: ConditionToken[];
     // 当前进行的事件
@@ -29,8 +32,8 @@ export interface StartedGameContext {
 
     time: () => number;
 
-    // playerStatSet: (stat: keyof CharacterStatus, value: number) => void;
-    // playerStatsSet: (stats: Partial<CharacterStatus>) => void;
+    startBattle: (sceneId: number) => void;
+    endBattle: () => void;
 
     tokenSet: (token: string, stackable?: boolean) => void;
     // 0: 不存在，>=1: 存在，层数

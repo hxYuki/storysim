@@ -16,6 +16,7 @@ import { Relic } from '../common/relic';
 import { Buff } from '../common/Buff';
 import { Character } from '../common/Character';
 import { BattlePage } from './subpages/Battle';
+import { DemoScene, Scene } from '../common/Scene';
 
 // 经过 1 年所消耗的时间
 const AgeTimeUnit = 10;
@@ -61,6 +62,8 @@ const GamePage: Component = () => {
     type GameState = 'talent-choose' | 'property-upgrade' | 'game-start' | 'game-end' | 'battle';
     const [gameState, setGameState] = createSignal<GameState>('talent-choose');
 
+    const [battleScene, setBattleScene] = createSignal<Scene>();
+
     // 玩家自由分配属性点数
     const [propertyPoints, setPropertyPoints] = createSignal<number>(5);
     // 生成用于各种操作闭包的上下文参数
@@ -97,6 +100,7 @@ const GamePage: Component = () => {
     const makeGameContext = (eventThis?: EventItem): StartedGameContext => ({
         gameState: 'game-start',
         player: player,
+        currentScene: battleScene(),
 
         reachedTokens: reachedTokens(),
         currentEvent: currentSingleEvent()!,
@@ -298,12 +302,14 @@ const GamePage: Component = () => {
         const events = createEventCandidates(20, chanceInstance);
         setAvailableEvents(events);
 
+        // FIXME: 测试场景，完成后移除
+        setBattleScene(DemoScene)
     })
 
     const [talentCadidates, setTalentCadidates] = createSignal<Talent[]>([]);
 
     return <>
-        <Switch>
+        {/* <Switch>
             <Match when={gameState() === 'talent-choose'}>
                 <TelentChoosePage talents={talentCadidates()} talentPoints={3} finish={finishTalentChoose} />
             </Match>
@@ -318,8 +324,8 @@ const GamePage: Component = () => {
             <Match when={gameState() === 'battle'}>
 
             </Match>
-        </Switch>
-        {/* <BattlePage /> */}
+        </Switch> */}
+        <BattlePage scene={battleScene()} makeContext={makeGameContext.bind(this)} />
     </>
 }
 export default GamePage;
@@ -524,7 +530,7 @@ interface EventsHistoryBarProps {
     ref?: HTMLUListElement;
 }
 const EventsHistoryBar: Component<EventsHistoryBarProps> = (p) => {
-    return <ul ref={p.ref} class='flex flex-col w-2/3 border rounded-lg p-5 space-y-2 overflow-y-auto'>
+    return <ul ref={p.ref} class='flex flex-col w-2/3 border rounded-lg p-5 space-y-2 overflow-y-auto ml-auto mr-auto'>
         <For each={p.history}>{(event) => <EventHistoryItem text={event.text} rightAligned={event.isChoice} />}</For>
     </ul>
 }
@@ -593,13 +599,13 @@ const StatusBar: Component<StatusBarProps> = (props) => {
         </ul></div>
 }
 
-interface HealthBarProps {
+export interface PercentBarProps {
     name: string;
     maxValue: number;
     current: number;
 }
 
-const PercentBar: Component<HealthBarProps> = (props) => {
+export const PercentBar: Component<PercentBarProps> = (props) => {
     const percentage = Math.floor(
         (props.current / props.maxValue) * 100);
 
@@ -617,7 +623,7 @@ const PercentBar: Component<HealthBarProps> = (props) => {
                         style={{
                             width: `${percentage}%`,
                             height: '100%',
-                            'background-color': 'green',
+                            'background-color': `green`,
                             position: 'relative',
                             'z-index': 0,
                         }}
