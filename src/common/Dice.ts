@@ -6,9 +6,15 @@ export interface Dice {
     dice(diceContext: DiceContext, base: number, requirement: number): DiceResult;
 }
 
+type DiceModifier = {
+    applyTo: string;
+    amount: number;
+    description: string;
+}
+
 export interface DiceContext {
-    valueModifier: Record<string, number>[];
-    limitModifier: Record<string, number>[];
+    valueModifier: DiceModifier[];
+    limitModifier: DiceModifier[];
     chanceInstance: Chance.Chance;
 }
 
@@ -17,4 +23,36 @@ export interface DiceResult {
     value: number;
     // TODO: 或许可以进一步封装 Reason
     reasons: [string[], string[]];
+}
+
+function Clamp(value: number, min: number, max: number) {
+    return Math.min(Math.max(value, min), max);
+}
+export class CharacterSpeedDice implements Dice {
+    diceClasses = ['speed-dice'];
+
+    dice(diceContext: DiceContext, base: number, requirement: number): DiceResult {
+        const appliedMods = diceContext.valueModifier.filter(m => this.diceClasses.includes(m.applyTo));
+
+        const value = Clamp(diceContext.chanceInstance.d20() + appliedMods.reduce((acc, cur) => acc + cur.amount, 0), 1, 20);
+
+        const result = value <= 1 ? 'screwed' :
+            value <= 5 ? 'fail' :
+                value <= 19 ? 'success' : 'terrific';
+
+        const reasons: [string[], string[]] = [[], []];
+        appliedMods.forEach(m => {
+            if (m.amount > 0) {
+                reasons[0].push(m.description);
+            } else {
+                reasons[1].push(m.description);
+            }
+        })
+
+        return {
+            result,
+            value,
+            reasons
+        }
+    }
 }
