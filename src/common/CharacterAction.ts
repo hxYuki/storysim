@@ -1,3 +1,4 @@
+import { Character } from "./Character";
 import { StartedGameContext } from "./game-context";
 
 // 角色在战斗中可以进行的操作
@@ -9,7 +10,9 @@ export interface CharacterAction {
     type: ActoinType;
     description: string;
 
-    act(ctx: StartedGameContext): void;
+    act(ctx: StartedGameContext, targets: Character[]): void;
+
+    targetChoosingAuto(ctx: StartedGameContext): Character[];
 
     disabled?: boolean;
     disabledText?: string;
@@ -37,16 +40,30 @@ export interface SpecialAction extends CharacterAction {
     type: 'special';
 }
 
+// TODO：各类型行动 目标选择函数 默认实现
+
+export const NOPAction: CharacterAction = {
+    id: -1,
+    name: '无操作',
+    type: 'special',
+    description: '什么都不做。',
+    act: (ctx, targets) => {
+        ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter?.name}呆在原地，一动也不动。`)
+    },
+    targetChoosingAuto: (ctx) => []
+}
+
 export const EscapeAction: CharacterAction = {
     id: 0,
     name: '逃跑',
     type: 'escape',
     description: '虽然不一定总是好用，但至少一个轻松的选择。',
     disabledText: '总会有事情是避无可避，必须面对的。',
-    act: (ctx) => {
+    act: (ctx, targets) => {
         // TODO:
         ctx.player.disableActions([0]);
-    }
+    },
+    targetChoosingAuto: (ctx) => []
 }
 
 export const AttackAction: AttackAction = {
@@ -54,9 +71,10 @@ export const AttackAction: AttackAction = {
     name: '攻击',
     type: 'attack',
     description: '进行打击。',
-    act: (ctx) => {
+    act: (ctx, targets) => {
         // TODO:
-    }
+    },
+    targetChoosingAuto: (ctx) => []
 }
 
 export const DefendAction: CharacterAction = {
@@ -64,7 +82,8 @@ export const DefendAction: CharacterAction = {
     name: '防御',
     type: 'defend', // 无条件减伤，根据判定决定幅度
     description: '抵挡将要来袭的打击。',
-    act: (ctx) => { }
+    act: (ctx, targets) => { },
+    targetChoosingAuto: (ctx) => []
 }
 
 export const DodgeAction: CharacterAction = {
@@ -72,5 +91,6 @@ export const DodgeAction: CharacterAction = {
     name: '闪避',
     type: 'dodge', // 判定，完全躲避伤害并提供额外的反击机会
     description: '躲避将要来袭的打击。',
-    act: (ctx) => { }
+    act: (ctx, targets) => { },
+    targetChoosingAuto: (ctx) => []
 }

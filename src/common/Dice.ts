@@ -6,7 +6,8 @@ export interface Dice {
     dice(diceContext: DiceContext, base: number, requirement: number): DiceResult;
 }
 
-type DiceModifier = {
+export type DiceModifier = {
+    type: 'value' | 'limit';
     applyTo: string;
     amount: number;
     description: string;
@@ -28,7 +29,7 @@ export interface DiceResult {
 function Clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
 }
-export class CharacterSpeedDice implements Dice {
+class CharacterSpeedDice implements Dice {
     diceClasses = ['speed-dice'];
 
     dice(diceContext: DiceContext, base: number, requirement: number): DiceResult {
@@ -39,6 +40,7 @@ export class CharacterSpeedDice implements Dice {
         const result = value <= 1 ? 'screwed' :
             value <= 5 ? 'fail' :
                 value <= 19 ? 'success' : 'terrific';
+
 
         const reasons: [string[], string[]] = [[], []];
         appliedMods.forEach(m => {
@@ -51,8 +53,9 @@ export class CharacterSpeedDice implements Dice {
 
         return {
             result,
-            value,
+            value: result === 'terrific' ? 2 : result === 'success' ? 1 : result === 'fail' ? 0.75 : 0.5,
             reasons
         }
     }
 }
+export const CharacterInitalSpeedDice = new CharacterSpeedDice();

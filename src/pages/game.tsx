@@ -101,11 +101,23 @@ const GamePage: Component = () => {
         gameState: 'game-start',
         chanceInstance: chanceInstance,
         createDiceContext(character) {
-            // TODO:
-            throw new Error('Method not implemented.');
+
+            // const characterBuff = character.diceModifiers.filter(m => m.type ==='value')
+            // throw new Error('Method not implemented.');
+
+            return {
+                chanceInstance,
+                valueModifier: character.diceModifiers.filter(m => m.type === 'value'),
+                limitModifier: character.diceModifiers.filter(m => m.type === 'limit'),
+            }
         },
         player: player,
         currentScene: battleScene(),
+        currentCharacter: undefined,
+        withCharacter(character) {
+            this.currentCharacter = character;
+            return this;
+        },
 
         reachedTokens: reachedTokens(),
         currentEvent: currentSingleEvent()!,

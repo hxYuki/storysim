@@ -37,3 +37,18 @@ export class Buff {
         return true;
     }
 }
+
+// export class DiceBuff implements Buff {
+//     id: string;
+//     name: string;
+//     description: string;
+//     onEffect: (ctx: StartedGameContext) => void;
+//     onApply?: ((ctx: StartedGameContext) => void) | undefined;
+//     onRemove?: ((ctx: StartedGameContext) => void) | undefined;
+//     remainingTime?: number | undefined;
+//     interval?: number | undefined;
+//     tick(ctx: StartedGameContext): boolean {
+//         throw new Error("Method not implemented.");
+//     }
+
+// }

@@ -4,8 +4,10 @@ import { Scene } from '../../common/Scene'
 import { StartedGameContext } from '../../common/game-context';
 import { Character } from '../../common/Character';
 import { CharacterAction } from '../../common/CharacterAction';
+import { CharacterInitalSpeedDice } from '../../common/Dice';
 
 
+const ActDistance = 100;
 export interface BattlePageProps {
     scene: Scene | undefined;
     makeContext: () => StartedGameContext
@@ -19,23 +21,83 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
     const [allies, setAllies] = createSignal<Character[]>()
     const [actions, setActions] = createSignal<CharacterAction[]>([]);
 
-    const [copiedCtx, setCopiedCtx] = createSignal<StartedGameContext>()
+    const [copiedCtx, setCopiedCtx] = createSignal<StartedGameContext>();
+
+    const unitActionDistance: Map<Character, number> = new Map();
+
+    const initializeSpeed = (unit: Character) => {
+        const diceCtx = props.makeContext().createDiceContext(unit);
+        const diceRes = CharacterInitalSpeedDice.dice(diceCtx, 0, 0)
+        unit.statSet('Speed', diceRes.value * unit.properties().Dexterity);
+    }
+
+    const gameLoop = () => {
+        const ctx = props.makeContext();
+
+        // const playerSpeed = player().properties().Speed
+        let playerDistanceLeft = unitActionDistance.get(player())!
+        while (playerDistanceLeft > 0) {
+            // let it = unitActionDistance.keys()
+            for (const unit of unitActionDistance) {
+                let distanceLeft = unit[1] - unit[0].properties().Speed;
+                while (distanceLeft <= 0) {
+                    // 该单位行动
+                    // TODO: 选择行动（AI）、选择目标（随机）、速度相近目标回应
+                    const action = unit[0].selectActionAuto();
+                    if (action) {
+                        action.act(ctx.withCharacter(unit[0]), action.targetChoosingAuto(ctx));
+                    }
+                    // TODOEND
+
+                    distanceLeft += ActDistance;
+                }
+                unitActionDistance.set(unit[0], distanceLeft)
+            }
+            playerDistanceLeft = unitActionDistance.get(player())!
+        }
+        // TODO： 玩家行动、选择目标、速度相近目标回应
+
+        unitActionDistance.set(player(), playerDistanceLeft + ActDistance);
+    }
+
+    function addEnemy(enemy: Character | Character[]) {
+        if (enemy instanceof Character)
+            enemy = [enemy]
+
+        setEnemies([...enemies() ?? [], ...enemy]);
+        enemy.forEach((e) => { unitActionDistance.set(e, ActDistance); initializeSpeed(e); });
+    }
+    function removeEnemy(enemy: Character | Character[]) {
+        if (enemy instanceof Character)
+            enemy = [enemy]
+
+        setEnemies(enemies()?.filter((e) => (enemy as Character[]).indexOf(e) === -1));
+        enemy.forEach((e) => unitActionDistance.delete(e));
+    }
+    function addAlly(ally: Character | Character[]) {
+        if (ally instanceof Character)
+            ally = [ally]
+        setAllies([...allies() ?? [], ...ally]);
+        ally.forEach((a) => { unitActionDistance.set(a, ActDistance); initializeSpeed(a); });
+    }
+    function removeAlly(ally: Character | Character[]) {
+        if (ally instanceof Character) {
+            ally = [ally]
+        }
+        setAllies(allies()?.filter((a) => (ally as Character[]).indexOf(a) === -1));
+        ally.forEach((a) => unitActionDistance.delete(a));
+    }
 
     const initSceneRuntime = () => {
         if (props.scene) {
             props.scene.runtime = {
-                addEnemy(enemy) {
-                    setEnemies([...enemies() ?? [], enemy]);
+                addEnemy,
+                removeEnemy,
+                addAlly,
+                removeAlly,
+                writeBattleRecord(str) {
+                    addHistory(str, false);
                 },
-                removeEnemy(enemy) {
-                    setEnemies(enemies()?.filter((e) => e !== enemy));
-                },
-                addAlly(ally) {
-                    setAllies([...allies() ?? [], ally]);
-                },
-                removeAlly(ally) {
-                    setAllies(allies()?.filter((a) => a !== ally));
-                }
             }
         }
     }
@@ -53,8 +115,10 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         setPlayer(ctx.player);
 
         props.scene?.setup(ctx);
-        setAllies(props.scene?.allies);
-        setEnemies(props.scene?.enemies);
+        // setAllies(props.scene?.allies);
+        addAlly(props.scene?.allies ?? [])
+        // setEnemies(props.scene?.enemies);
+        addEnemy(props.scene?.enemies ?? [])
 
         setCopiedCtx(ctx);
     })
@@ -66,6 +130,14 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
 
         props.scene?.cleanup(ctx);
     })
+
+    const playerAct = (action: CharacterAction) => {
+        const ctx = props.makeContext();
+        action.act(ctx.withCharacter(player()), action.targetChoosingAuto(ctx));
+
+        // TODO: gameLoop 互动
+        // gameLoop();
+    }
 
     return (
         <>
@@ -79,7 +151,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                 <Index each={props.makeContext().player.actionList()}>{
                     (action, index) =>
                         <button class={`rounded-lg p-2 m-1 border flex-auto basis-1/4 ${action().disabled ? 'bg-gray-300' : ''}`}
-                            onClick={[action().act, props.makeContext()]}
+                            onClick={[playerAct, action()]}
                             disabled={action().disabled}>{action().name}</button>
                 }</Index>
             </div >

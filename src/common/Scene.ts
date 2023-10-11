@@ -23,10 +23,12 @@ export interface Scene {
 }
 
 export interface SceneRuntime {
-    addEnemy: (enemy: Character) => void;
-    removeEnemy: (enemy: Character) => void;
-    addAlly: (ally: Character) => void;
-    removeAlly: (ally: Character) => void;
+    addEnemy: (enemy: Character | Character[]) => void;
+    removeEnemy: (enemy: Character | Character[]) => void;
+    addAlly: (ally: Character | Character[]) => void;
+    removeAlly: (ally: Character | Character[]) => void;
+
+    writeBattleRecord: (str: string) => void;
 }
 
 export const DemoScene: Scene = {

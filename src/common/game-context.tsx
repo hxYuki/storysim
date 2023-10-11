@@ -22,6 +22,8 @@ export interface StartedGameContext {
     player: Character;
 
     currentScene: Scene | undefined;
+    currentCharacter: Character | undefined;
+    withCharacter: (character: Character) => this;
 
     // playerDetails: CharacterStatus;
     reachedTokens: ConditionToken[];

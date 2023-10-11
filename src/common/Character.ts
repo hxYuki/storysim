@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { Buff } from "./Buff";
 import { CharacterBaseProperty, CharacterStatus, CharacterStatusCurentProperty, CharacterStatusProperty, SocialProperty, createEmptyStatus } from "./CharacterStatus";
-import { DiceContext } from "./Dice";
+import { DiceContext, DiceModifier } from "./Dice";
 import { CharacterOperation } from "./game-context";
 import { Relic } from "./relic";
 import { AttackAction, CharacterAction, DefendAction, DodgeAction, EscapeAction } from "./CharacterAction";
@@ -17,6 +17,8 @@ export interface Character {
     buffs: () => Buff[];
 
     actionList: () => CharacterAction[];
+
+    selectActionAuto: (allies?: Character[], enemies?: Character[]) => CharacterAction;
 }
 
 export class Character implements CharacterOperation {
@@ -24,8 +26,10 @@ export class Character implements CharacterOperation {
     inventoryGS;
     buffsGS;
     actionListGS;
+
+    diceModifiers: DiceModifier[] = [];
     // private propSetter;
-    constructor(id?: number, name?: string, defaultStatus?: CharacterStatus) {
+    constructor(id?: number, name?: string, defaultStatus?: CharacterStatus, autoSelection?: (allies?: Character[], enemies?: Character[]) => CharacterAction) {
         this.id = id ?? 0;
         this.name = name ?? '玩家';
         this.propertyGS = createSignal<CharacterStatus>(defaultStatus ?? createEmptyStatus());
@@ -36,6 +40,13 @@ export class Character implements CharacterOperation {
         this.inventory = this.inventoryGS[0];
         this.buffs = this.buffsGS[0];
         this.actionList = this.actionListGS[0];
+
+        this.selectActionAuto = autoSelection ?? ((allies?: Character[], enemies?: Character[]) => {
+            const actions = this.actionListGS[0]().filter(a => !a.disabled);
+
+
+            return actions[0];
+        })
     }
 
     replaceActionList(actions: CharacterAction[]) {
@@ -79,6 +90,8 @@ export class Character implements CharacterOperation {
             return a;
         }));
     }
+
+
 
     // 由自身向目标施加伤害/治疗
     damage(target: Character, damages: Partial<CharacterStatusProperty>) {
