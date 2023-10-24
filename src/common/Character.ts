@@ -18,7 +18,7 @@ export interface Character {
 
     actionList: () => CharacterAction[];
 
-    selectActionAuto: (allies?: Character[], enemies?: Character[]) => CharacterAction;
+    selectActionAuto: (allies?: Character[], enemies?: Character[], reactFor?: CharacterAction) => CharacterAction;
 }
 
 export class Character implements CharacterOperation {

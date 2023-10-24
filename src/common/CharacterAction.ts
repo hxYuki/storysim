@@ -12,7 +12,7 @@ export interface CharacterAction {
 
     act(ctx: StartedGameContext, targets: Character[]): void;
 
-    targetChoosingAuto(ctx: StartedGameContext): Character[];
+    targetChoosingAuto(ctx: StartedGameContext, triggeredBy?: Character): Character[];
 
     disabled?: boolean;
     disabledText?: string;
@@ -50,7 +50,7 @@ export const NOPAction: CharacterAction = {
     act: (ctx, targets) => {
         ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter?.name}呆在原地，一动也不动。`)
     },
-    targetChoosingAuto: (ctx) => []
+    targetChoosingAuto: (ctx, triggeredBy) => []
 }
 
 export const EscapeAction: CharacterAction = {
@@ -63,7 +63,7 @@ export const EscapeAction: CharacterAction = {
         // TODO:
         ctx.player.disableActions([0]);
     },
-    targetChoosingAuto: (ctx) => []
+    targetChoosingAuto: (ctx, triggeredBy) => []
 }
 
 export const AttackAction: AttackAction = {
@@ -74,7 +74,7 @@ export const AttackAction: AttackAction = {
     act: (ctx, targets) => {
         // TODO:
     },
-    targetChoosingAuto: (ctx) => []
+    targetChoosingAuto: (ctx, triggeredBy) => []
 }
 
 export const DefendAction: CharacterAction = {
@@ -83,7 +83,7 @@ export const DefendAction: CharacterAction = {
     type: 'defend', // 无条件减伤，根据判定决定幅度
     description: '抵挡将要来袭的打击。',
     act: (ctx, targets) => { },
-    targetChoosingAuto: (ctx) => []
+    targetChoosingAuto: (ctx, triggeredBy) => []
 }
 
 export const DodgeAction: CharacterAction = {
@@ -92,5 +92,5 @@ export const DodgeAction: CharacterAction = {
     type: 'dodge', // 判定，完全躲避伤害并提供额外的反击机会
     description: '躲避将要来袭的打击。',
     act: (ctx, targets) => { },
-    targetChoosingAuto: (ctx) => []
+    targetChoosingAuto: (ctx, triggeredBy) => []
 }
