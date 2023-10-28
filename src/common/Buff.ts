@@ -1,12 +1,12 @@
-import { StartedGameContext } from "./game-context";
+import { WithCharacterContext } from "./game-context";
 
 export interface Buff {
     id: string;
     name: string;
     description: string;
-    onEffect: (ctx: StartedGameContext) => void;
-    onApply?: (ctx: StartedGameContext) => void;
-    onRemove?: (ctx: StartedGameContext) => void;
+    onEffect: (ctx: WithCharacterContext) => void;
+    onApply?: (ctx: WithCharacterContext) => void;
+    onRemove?: (ctx: WithCharacterContext) => void;
 
     remainingTime?: number;
     interval?: number;
@@ -14,7 +14,7 @@ export interface Buff {
 
 export class Buff {
     private leap?: number;
-    tick(ctx: StartedGameContext): boolean {
+    tick(ctx: WithCharacterContext): boolean {
         if (!this.leap) {
             this.leap = ctx.time();
             this.onEffect(ctx);

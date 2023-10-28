@@ -1,7 +1,7 @@
 import { Component, For, Index, Match, Show, Switch, createEffect, createSignal, onCleanup, onMount } from 'solid-js'
 import { PercentBar, useEventHistoryBar } from '../game'
 import { Scene } from '../../common/Scene'
-import { StartedGameContext } from '../../common/game-context';
+import { StartedGameContext, WithCharacterContext } from '../../common/game-context';
 import { Character } from '../../common/Character';
 import { CharacterAction, NOPAction } from '../../common/CharacterAction';
 import { CharacterInitalSpeedDice } from '../../common/Dice';
@@ -34,7 +34,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         unit.statSet('Speed', diceRes.value * unit.properties().Dexterity);
     }
 
-    function excuteAction(action: CharacterAction, ctx: StartedGameContext, triggeredBy: Character | undefined, character: Character) {
+    function excuteAction(action: CharacterAction, ctx: WithCharacterContext, triggeredBy: Character | undefined, character: Character) {
         const targets = action.targetChoosingAuto(ctx, triggeredBy);
 
         // 因为回应其他单位提前行动的单位的该次行动不再会触发行动目标的回应

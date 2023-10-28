@@ -1,13 +1,13 @@
-import { StartedGameContext } from "./game-context";
+import { WithCharacterContext } from "./game-context";
 
 export type Relic = {
     id: number;
     name: string;
     description: string;
     // 主动使用效果
-    use?: (ctx: StartedGameContext) => void;
+    use?: (ctx: WithCharacterContext) => void;
     // 获得被动效果
-    hold: (ctx: StartedGameContext) => void;
+    hold: (ctx: WithCharacterContext) => void;
     // 失去移除效果
-    lost: (ctx: StartedGameContext) => void;
+    lost: (ctx: WithCharacterContext) => void;
 }

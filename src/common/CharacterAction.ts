@@ -1,5 +1,5 @@
 import { Character } from "./Character";
-import { StartedGameContext } from "./game-context";
+import { StartedGameContext, WithCharacterContext } from "./game-context";
 
 // 角色在战斗中可以进行的操作
 // 或许与场景强相关，在别处定义的行动应当遵循一定原则：避免影响“场景”的安排、发展
@@ -10,9 +10,9 @@ export interface CharacterAction {
     type: ActoinType;
     description: string;
 
-    act(ctx: StartedGameContext, targets: Character[]): void;
+    act(ctx: WithCharacterContext, targets: Character[]): void;
 
-    targetChoosingAuto(ctx: StartedGameContext, triggeredBy?: Character): Character[];
+    targetChoosingAuto(ctx: WithCharacterContext, triggeredBy?: Character): Character[];
 
     disabled?: boolean;
     disabledText?: string;
@@ -48,7 +48,7 @@ export const NOPAction: CharacterAction = {
     type: 'special',
     description: '什么都不做。',
     act: (ctx, targets) => {
-        ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter?.name}呆在原地，一动也不动。`)
+        ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}呆在原地，一动也不动。`)
     },
     targetChoosingAuto: (ctx, triggeredBy) => []
 }

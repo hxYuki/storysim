@@ -6,7 +6,7 @@ import type { StoreNode, Store, SetStoreFunction } from "solid-js/store";
 
 import { createEventCandidates } from '../common/events-collection'
 import { CharacterBaseProperty, CharacterStatus, createEmptyStatus } from '../common/CharacterStatus'
-import { BeforeGameContext, StartedGameContext } from '../common/game-context'
+import { BeforeGameContext, StartedGameContext, WithCharacterContext } from '../common/game-context'
 import { EventItem, EventChain, OptionItem, SingleEvent, weightedPickEvent, ConditionToken, StackableToken, filterReadyEvents, conditionsCheck } from '../common/events'
 
 import chance from 'chance'
@@ -113,10 +113,26 @@ const GamePage: Component = () => {
         },
         player: player,
         currentScene: battleScene(),
-        currentCharacter: undefined,
+        // currentCharacter: undefined,
         withCharacter(character) {
-            this.currentCharacter = character;
-            return this;
+            character = character ?? player;
+
+            const withChar: WithCharacterContext = { ...this, currentCharacter: character };
+            if (this.currentScene) {
+                withChar.currentScene = { ...this.currentScene }
+                // 为场景中的角色应用 队友/敌人
+                if (this.currentScene.enemies.includes(character)) {
+                    const enemy = [this.player, ...this.currentScene.allies]
+                    const ally = this.currentScene.enemies.filter(e => e !== character);
+                    withChar.currentScene = { ...this.currentScene, enemies: enemy, allies: ally };
+                }
+                if (this.currentScene.allies.includes(character)) {
+                    const ally = [this.player, ...this.currentScene.allies.filter(e => e !== character)]
+                    const enemy = this.currentScene.enemies;
+                    withChar.currentScene = { ...this.currentScene, allies: ally, enemies: enemy };
+                }
+            }
+            return withChar;
         },
 
         reachedTokens: reachedTokens(),
@@ -216,13 +232,15 @@ const GamePage: Component = () => {
             setTimeAccumulated(t => t + (currentSingle.timeCost ?? 1));
             player.statsSet({ 'Age': Math.floor(timeAccumulated() / AgeTimeUnit) })
 
+            const ctx = makeGameContext().withCharacter()
+
             const ended = buffs().map(b => ({
                 buff: b,
-                isOver: b.tick(makeGameContext())
+                isOver: b.tick(ctx)
             })).filter(b => b.isOver).map(b => b.buff);
 
             ended.forEach(b => {
-                b.onRemove?.(makeGameContext());
+                b.onRemove?.(ctx);
             })
             setBuffs(b => b.filter(b => !ended.includes(b)));
         }

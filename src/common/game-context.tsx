@@ -22,8 +22,8 @@ export interface StartedGameContext {
     player: Character;
 
     currentScene: Scene | undefined;
-    currentCharacter: Character | undefined;
-    withCharacter: (character: Character) => this;
+    // currentCharacter: undefined;
+    withCharacter: (character?: Character) => Omit<this, 'withCharacter'> & { currentCharacter: Character }
 
     // playerDetails: CharacterStatus;
     reachedTokens: ConditionToken[];
@@ -48,6 +48,10 @@ export interface StartedGameContext {
 
     endGame(): void;
 }
+
+export type WithCharacterContext = Omit<StartedGameContext, 'withCharacter'> & { currentCharacter: Character };
+
+
 
 export interface AfterGameContext {
     gameState: 'game-end'
