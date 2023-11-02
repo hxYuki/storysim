@@ -117,7 +117,7 @@ const GamePage: Component = () => {
         withCharacter(character) {
             character = character ?? player;
 
-            const withChar: WithCharacterContext = { ...this, currentCharacter: character };
+            const withChar: WithCharacterContext = { ...this, currentCharacter: character, createDiceContext: (char?: Character) => char ? this.createDiceContext(char) : this.createDiceContext(character!) };
             if (this.currentScene) {
                 withChar.currentScene = { ...this.currentScene }
                 // 为场景中的角色应用 队友/敌人

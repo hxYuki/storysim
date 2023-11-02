@@ -23,7 +23,7 @@ export interface StartedGameContext {
 
     currentScene: Scene | undefined;
     // currentCharacter: undefined;
-    withCharacter: (character?: Character) => Omit<this, 'withCharacter'> & { currentCharacter: Character }
+    withCharacter: (character?: Character) => Omit<StartedGameContext, 'withCharacter'> & CharacteredCtx
 
     // playerDetails: CharacterStatus;
     reachedTokens: ConditionToken[];
@@ -49,7 +49,11 @@ export interface StartedGameContext {
     endGame(): void;
 }
 
-export type WithCharacterContext = Omit<StartedGameContext, 'withCharacter'> & { currentCharacter: Character };
+type CharacteredCtx = {
+    currentCharacter: Character;
+    createDiceContext: () => DiceContext;
+}
+export type WithCharacterContext = Omit<StartedGameContext, 'withCharacter'> & CharacteredCtx;
 
 
 
