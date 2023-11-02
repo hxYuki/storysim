@@ -5,6 +5,7 @@ import { DiceContext, DiceModifier } from "./Dice";
 import { CharacterOperation } from "./game-context";
 import { Relic } from "./relic";
 import { AttackAction, CharacterAction, DefendAction, DodgeAction, EscapeAction } from "./CharacterAction";
+import { Damage } from "./Damage";
 
 export interface Character {
     // id 为 0 时表示玩家
@@ -72,6 +73,16 @@ export class Character implements CharacterOperation {
             ...offsets
         }));
     }
+    statsModifyWithLowerbound(offsets: Partial<CharacterStatus>, lowerbound = 1) {
+        Object.keys(offsets).forEach(k => {
+            const key = k as keyof CharacterStatus;
+            offsets[key] = Math.max(lowerbound, offsets[key]! + this.propertyGS[0]()[key]);
+        })
+        this.propertyGS[1](s => ({
+            ...s,
+            ...offsets
+        }));
+    }
 
     addActions(actions: CharacterAction[]) {
         this.actionListGS[1](actions => [...actions, ...actions]);
@@ -93,16 +104,32 @@ export class Character implements CharacterOperation {
 
 
 
-    // 由自身向目标施加伤害/治疗
-    damage(target: Character, damages: Partial<CharacterStatusProperty>) {
+    // 由自身向目标施加伤害/治疗, 根据自身buff对数值进行修饰
+    dealDamage(target: Character, damages: Damage) {
 
+        target.takeDamage(damages, this);
     }
-    heal(target: Character, damages: Partial<CharacterStatusProperty>) {
+    dealHealing(target: Character, damages: Damage) {
 
+        target.takeHealing(damages, this);
     }
 
-    // takeDamage;
-    // takeHealing;
+    // 接受来自目标的伤害/治疗, 根据自身buff对数值进行修饰
+    takeDamage(damages: Damage, from: Character) {
+
+
+        // 伤害，将造成角色状态值下降
+        damages.reverse();
+
+        if (damages.notKill) {
+            this.statsModifyWithLowerbound(damages.raw);
+        } else
+            this.statsModifyBy(damages.raw);
+    };
+    takeHealing(damages: Damage, from: Character) {
+
+        this.statsModifyWithLowerbound(damages.raw);
+    };
 
     applyBuff(buff: Buff) { }
     removeBuff(buff: Buff) { }
