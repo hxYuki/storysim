@@ -1,4 +1,6 @@
 import { Character } from "./Character";
+import { Damage } from "./Damage";
+import { CharacterPropertyCheckDice } from "./Dice";
 import { StartedGameContext, WithCharacterContext } from "./game-context";
 
 // 角色在战斗中可以进行的操作
@@ -72,9 +74,20 @@ export const AttackAction: AttackAction = {
     type: 'attack',
     description: '进行打击。',
     act: (ctx, targets) => {
-        // TODO:
+        const diceCtx = ctx.createDiceContext();
+
+        const damageEfficient = CharacterPropertyCheckDice.withTags('damage', 'health', 'attack').dice(diceCtx, ctx.currentCharacter.properties().Constitution, targets[0].properties().Constitution);
+
+        const damage = Math.floor(damageEfficient.value * ctx.currentCharacter.properties().Constitution);
+
+        ctx.currentCharacter.dealDamage(targets[0], Damage.fromRaw({ Health: damage }));
     },
-    targetChoosingAuto: (ctx, triggeredBy) => []
+    targetChoosingAuto: (ctx, triggeredBy) => {
+        if (triggeredBy)
+            return [triggeredBy];
+
+        return ctx.currentScene ? [ctx.currentScene.enemies[0]] : [];
+    }
 }
 
 export const DefendAction: CharacterAction = {
@@ -83,7 +96,7 @@ export const DefendAction: CharacterAction = {
     type: 'defend', // 无条件减伤，根据判定决定幅度
     description: '抵挡将要来袭的打击。',
     act: (ctx, targets) => { },
-    targetChoosingAuto: (ctx, triggeredBy) => []
+    targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter]
 }
 
 export const DodgeAction: CharacterAction = {
@@ -92,5 +105,5 @@ export const DodgeAction: CharacterAction = {
     type: 'dodge', // 判定，完全躲避伤害并提供额外的反击机会
     description: '躲避将要来袭的打击。',
     act: (ctx, targets) => { },
-    targetChoosingAuto: (ctx, triggeredBy) => []
+    targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter]
 }
