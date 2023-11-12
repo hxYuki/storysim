@@ -72,7 +72,9 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         if (character === player()) {
             StartPlayerMove(triggeredBy);
         } else {
+            character.beforeMove(props.makeContext().withCharacter(character));
             CharacterAutoMove(character, triggeredBy);
+            character.afterMove(props.makeContext().withCharacter(character));
         }
         if (character.properties().Speed < unitActionDistance.get(character)!) {
             throw new Error('不应该行动的角色，请检查');
@@ -97,6 +99,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
     const [isRunning, setIsRunning] = createSignal(false);
 
     const StartPlayerMove = (triggeredBy?: Character) => {
+        player().beforeMove(props.makeContext().withCharacter(player()));
         // 等待玩家输入行动
         setIsPlayerMove(true);
         playerTriggeredBy = triggeredBy;
@@ -119,6 +122,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         });
 
         setIsPlayerMove(false);
+        player().afterMove(props.makeContext().withCharacter(player()));
     }
     const keepMove = () => {
         while (!isPlayerMove()) {
@@ -127,7 +131,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
     }
     const nextMove = () => {
         setIsRunning(true);
-        const ctx = props.makeContext();
+        // const ctx = props.makeContext();
 
         let unitTime: [Character, number][] = [];
         for (const unit of unitActionDistance) {

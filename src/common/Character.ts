@@ -1,8 +1,8 @@
-import { createSignal } from "solid-js";
+import { createSignal, on } from "solid-js";
 import { Buff } from "./Buff";
 import { CharacterBaseProperty, CharacterStatus, CharacterStatusCurentProperty, CharacterStatusProperty, SocialProperty, createEmptyStatus } from "./CharacterStatus";
 import { DiceContext, DiceModifier } from "./Dice";
-import { CharacterOperation } from "./game-context";
+import { CharacterOperation, WithCharacterContext } from "./game-context";
 import { Relic } from "./relic";
 import { AttackAction, CharacterAction, DefendAction, DodgeAction, EscapeAction } from "./CharacterAction";
 import { Damage } from "./Damage";
@@ -105,31 +105,58 @@ export class Character implements CharacterOperation {
 
 
     // 由自身向目标施加伤害/治疗, 根据自身buff对数值进行修饰
-    dealDamage(target: Character, damages: Damage) {
+    dealDamage(target: Character, damage: Damage) {
+        damage = this.onDealingDamage.reduce((dmg, mod) => mod(dmg), damage);
 
-        target.takeDamage(damages, this);
+        target.takeDamage(damage, this);
     }
-    dealHealing(target: Character, damages: Damage) {
+    dealHealing(target: Character, damage: Damage) {
 
-        target.takeHealing(damages, this);
+        target.takeHealing(damage, this);
     }
 
     // 接受来自目标的伤害/治疗, 根据自身buff对数值进行修饰
-    takeDamage(damages: Damage, from: Character) {
-
+    takeDamage(damage: Damage, from: Character) {
+        damage = this.onTakingDamage.reduce((dmg, mod) => mod(dmg), damage);
 
         // 伤害，将造成角色状态值下降
-        damages.reverse();
+        damage.reverse();
 
-        if (damages.notKill) {
-            this.statsModifyWithLowerbound(damages.raw);
+        if (damage.notKill) {
+            this.statsModifyWithLowerbound(damage.raw);
         } else
-            this.statsModifyBy(damages.raw);
+            this.statsModifyBy(damage.raw);
     };
-    takeHealing(damages: Damage, from: Character) {
+    takeHealing(damage: Damage, from: Character) {
 
-        this.statsModifyWithLowerbound(damages.raw);
+        this.statsModifyWithLowerbound(damage.raw);
     };
+
+    beforeMove(ctx: WithCharacterContext) {
+
+        this.onBeforeMove.forEach(cb => cb(ctx));
+    }
+    afterMove(ctx: WithCharacterContext) {
+
+        this.onAfterMove.forEach(cb => cb(ctx));
+    }
+    addMoveCallback(when: 'before' | 'after', cb: (ctx: WithCharacterContext) => void) {
+        if (when === 'before')
+            this.onBeforeMove.push(cb);
+        else
+            this.onAfterMove.push(cb);
+    }
+    removeMoveCallback(when: 'before' | 'after', cb: (ctx: WithCharacterContext) => void) {
+        if (when === 'before')
+            this.onBeforeMove = this.onBeforeMove.filter(c => c !== cb);
+        else
+            this.onAfterMove = this.onAfterMove.filter(c => c !== cb);
+    }
+    // type CharacterCallback = (ctx: WithCharacterContext) => void;
+    onBeforeMove: ((ctx: WithCharacterContext) => void)[] = [];
+    onAfterMove: ((ctx: WithCharacterContext) => void)[] = [];
+    onTakingDamage: ((dmg: Damage) => Damage)[] = [];
+    onDealingDamage: ((dmg: Damage) => Damage)[] = [];
 
     applyBuff(buff: Buff) { }
     removeBuff(buff: Buff) { }
