@@ -234,7 +234,7 @@ const GamePage: Component = () => {
 
             const ctx = makeGameContext().withCharacter()
 
-            const ended = buffs().map(b => ({
+            const ended = buffs().filter(b => b.stage === '').map(b => ({
                 buff: b,
                 isOver: b.tick(ctx)
             })).filter(b => b.isOver).map(b => b.buff);

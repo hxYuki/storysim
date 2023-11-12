@@ -4,6 +4,7 @@ export interface Buff {
     id: string;
     name: string;
     description: string;
+    stage: BuffStage;
     onEffect: (ctx: WithCharacterContext) => void;
     onApply?: (ctx: WithCharacterContext) => void;
     onRemove?: (ctx: WithCharacterContext) => void;
@@ -11,6 +12,9 @@ export interface Buff {
     remainingTime?: number;
     interval?: number;
 }
+
+// 为空时表示战斗外效果
+type BuffStage = '' | 'damage-taking' | 'damage-dealing' | 'before-action' | 'after-action';
 
 export class Buff {
     private leap?: number;
