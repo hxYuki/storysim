@@ -75,8 +75,8 @@ export const CharacterInitalSpeedDice = new CharacterSpeedDice();
 // 适用 自身 -- 目标属性 模式
 // 正的属性差距 与 大成功概率 关系为 (1+x)/(20+x)
 // 负的属性差距 与 大失败概率 关系为 x/20
-class CharacterPropertyDice implements Dice {
-    diceClasses = ['damage-dice'];
+class CharacterPropertyDamageDice implements Dice {
+    diceClasses:string[] = [];
     withTags(...tags: string[]): Dice {
         return withTags(this, ...tags);
     }
@@ -118,4 +118,4 @@ class CharacterPropertyDice implements Dice {
         }
     }
 }
-export const CharacterPropertyCheckDice = new CharacterPropertyDice();
+export const CharacterPropertyCheckEfficientDice = new CharacterPropertyDamageDice();

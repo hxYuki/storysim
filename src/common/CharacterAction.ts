@@ -1,6 +1,7 @@
+import { Buff } from "./Buff";
 import { Character } from "./Character";
 import { Damage } from "./Damage";
-import { CharacterPropertyCheckDice } from "./Dice";
+import { CharacterPropertyCheckEfficientDice } from "./Dice";
 import { StartedGameContext, WithCharacterContext } from "./game-context";
 
 // 角色在战斗中可以进行的操作
@@ -76,7 +77,7 @@ export const AttackAction: AttackAction = {
     act: (ctx, targets) => {
         const diceCtx = ctx.createDiceContext();
 
-        const damageEfficient = CharacterPropertyCheckDice.withTags('damage', 'health', 'attack').dice(diceCtx, ctx.currentCharacter.properties().Constitution, targets[0].properties().Constitution);
+        const damageEfficient = CharacterPropertyCheckEfficientDice.withTags('damage', 'health', 'attack').dice(diceCtx, ctx.currentCharacter.properties().Constitution, targets[0].properties().Constitution);
 
         const damage = Math.floor(damageEfficient.value * ctx.currentCharacter.properties().Constitution);
 
@@ -90,12 +91,36 @@ export const AttackAction: AttackAction = {
     }
 }
 
+class DefendDamageReduce extends Buff {
+    constructor(ratio: number) {
+        super();
+        this.ratio = ratio;
+    }
+    remainingTime = 1;
+    ratio: number;
+    dmgReducer = (damage: Damage) => {
+        damage.multiplyBy(this.ratio)
+        return damage;
+    };
+    onApply = (ctx: WithCharacterContext) => {
+        ctx.currentCharacter.takingDamageModifier.push(this.dmgReducer)
+    }
+    onRemove = (ctx: WithCharacterContext) => {
+        ctx.currentCharacter.takingDamageModifier = ctx.currentCharacter.takingDamageModifier.filter(f => f !== this.dmgReducer);
+    }
+}
 export const DefendAction: CharacterAction = {
     id: 2,
     name: '防御',
     type: 'defend', // 无条件减伤，根据判定决定幅度
     description: '抵挡将要来袭的打击。',
-    act: (ctx, targets) => { },
+    act: (ctx, targets) => {
+        const diceCtx = ctx.createDiceContext();
+        const result = CharacterPropertyCheckEfficientDice.withTags('defend').dice(diceCtx, ctx.currentCharacter.properties().Constitution, ctx.currentCharacter.properties().Constitution);
+        const ratio = 0.1 + result.value * 0.35;
+
+        targets[0].applyBuff(new DefendDamageReduce(ratio));
+    },
     targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter]
 }
 

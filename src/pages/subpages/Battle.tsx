@@ -154,10 +154,17 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
     }
 
     function setCharacterActionDistance(characters: Character[]) {
-        characters.forEach((e) => { unitActionDistance.set(e, ActDistance); initializeSpeed(e); });
+        characters.forEach((e) => {
+            unitActionDistance.set(e, ActDistance);
+            initializeSpeed(e);
+            e.bindContext(() => props.makeContext().withCharacter(e));
+        });
     }
     function removeCharacterActionDistance(characters: Character[]) {
-        characters.forEach((e) => { unitActionDistance.delete(e); });
+        characters.forEach((e) => {
+            unitActionDistance.delete(e);
+            e.ctxMaker = undefined;
+        });
     }
 
     function addEnemy(enemy: Character | Character[]) {

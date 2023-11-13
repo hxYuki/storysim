@@ -18,6 +18,7 @@ type BuffStage = '' | 'damage-taking' | 'damage-dealing' | 'before-action' | 'af
 
 export class Buff {
     private leap?: number;
+    // 战斗中生效的 Buff 不要使用tick
     tick(ctx: WithCharacterContext): boolean {
         if (!this.leap) {
             this.leap = ctx.time();

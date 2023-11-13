@@ -50,6 +50,11 @@ export class Character implements CharacterOperation {
         })
     }
 
+    bindContext(maker: () => WithCharacterContext) {
+        this.ctxMaker = maker;
+    }
+    ctxMaker?: () => WithCharacterContext;
+
     replaceActionList(actions: CharacterAction[]) {
         this.actionListGS[1](actions);
     }
@@ -106,7 +111,7 @@ export class Character implements CharacterOperation {
 
     // 由自身向目标施加伤害/治疗, 根据自身buff对数值进行修饰
     dealDamage(target: Character, damage: Damage) {
-        damage = this.onDealingDamage.reduce((dmg, mod) => mod(dmg), damage);
+        damage = this.dealingDamageModifier.reduce((dmg, mod) => mod(dmg), damage);
 
         target.takeDamage(damage, this);
     }
@@ -117,7 +122,7 @@ export class Character implements CharacterOperation {
 
     // 接受来自目标的伤害/治疗, 根据自身buff对数值进行修饰
     takeDamage(damage: Damage, from: Character) {
-        damage = this.onTakingDamage.reduce((dmg, mod) => mod(dmg), damage);
+        damage = this.takingDamageModifier.reduce((dmg, mod) => mod(dmg), damage);
 
         // 伤害，将造成角色状态值下降
         damage.reverse();
@@ -134,7 +139,17 @@ export class Character implements CharacterOperation {
 
     beforeMove(ctx: WithCharacterContext) {
 
-        this.onBeforeMove.forEach(cb => cb(ctx));
+
+        let toRemove: Buff[] = [];
+        this.buffs().filter(b => b.stage !== '').forEach(b => {
+            if (b.remainingTime) {
+                b.remainingTime--;
+                if (b.remainingTime <= 0) {
+                    toRemove.push(b);
+                }
+            }
+        })
+        this.removeBuff(toRemove);
     }
     afterMove(ctx: WithCharacterContext) {
 
@@ -155,11 +170,26 @@ export class Character implements CharacterOperation {
     // type CharacterCallback = (ctx: WithCharacterContext) => void;
     onBeforeMove: ((ctx: WithCharacterContext) => void)[] = [];
     onAfterMove: ((ctx: WithCharacterContext) => void)[] = [];
-    onTakingDamage: ((dmg: Damage) => Damage)[] = [];
-    onDealingDamage: ((dmg: Damage) => Damage)[] = [];
 
-    applyBuff(buff: Buff) { }
-    removeBuff(buff: Buff) { }
+    onBeforeTakeDamage: ((from: Character, dmg: Damage) => void)[] = [];
+    onAfterTakeDamage: ((from: Character, dmg: Damage) => void)[] = [];
+
+    takingDamageModifier: ((dmg: Damage) => Damage)[] = [];
+    dealingDamageModifier: ((dmg: Damage) => Damage)[] = [];
+
+    applyBuff(buff: Buff) {
+        this.buffsGS[1](bs => [...bs, buff]);
+
+        buff.onApply?.(this.ctxMaker!())
+    }
+    removeBuff(buff: Buff | Buff[]) {
+        if (!Array.isArray(buff)) {
+            buff = [buff]
+        }
+        let buffs = buff as Buff[];
+        this.buffsGS[1](bs => bs.filter(b => !buffs.includes(b)));
+        buffs.forEach(this.removeBuff);
+    }
 
     addRelic(relic: Relic) { }
     dropRelic(relic: Relic) { }

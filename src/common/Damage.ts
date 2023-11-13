@@ -26,6 +26,12 @@ export class Damage {
             this.raw[key] = -this.raw[key]!;
         })
     }
+    public multiplyBy(multiplier: number) { 
+        Object.keys(this.raw).forEach(k => {
+            const key = k as keyof CharacterStatusCurentProperty;
+            this.raw[key] = this.raw[key]! * multiplier;
+        })
+    }
 }
 
 function StatusPropertyToCurrentProperty(status: keyof CharacterStatusProperty): keyof CharacterStatusCurentProperty {
