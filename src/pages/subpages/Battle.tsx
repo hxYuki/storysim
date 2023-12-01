@@ -13,7 +13,7 @@ export interface BattlePageProps {
     makeContext: () => StartedGameContext
 }
 export const BattlePage: Component<BattlePageProps> = (props) => {
-    const [HistoryBar, addHistory] = useEventHistoryBar()
+    const [HistoryBar, addHistory, textBuilder] = useEventHistoryBar()
 
 
     const [player, setPlayer] = createSignal<Character>(new Character());
@@ -206,6 +206,11 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                 writeBattleRecord(str) {
                     addHistory(str, false);
                 },
+                advanceCharacterAction(character: Character, percent: number) {
+                    let dis = unitActionDistance.get(character)!;
+                    dis = dis - percent * dis;
+                    unitActionDistance.set(character, dis);
+                },
             }
         }
     }
@@ -233,6 +238,12 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
 
 
         setCopiedCtx(ctx);
+
+        textBuilder.buildText('SourceName', "123");
+        textBuilder.buildText('TargetName', "456");
+        textBuilder.buildText('ActionName', "789");
+        textBuilder.setTemplate("{SourceName}对{TargetName}使用了{ActionName}");
+        textBuilder.commitBuild(false);
 
         // gameloopTimer = window.setInterval(() => {
         //     if (isPlayerMove() || isRunning()) {

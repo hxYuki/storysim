@@ -17,6 +17,7 @@ import { Buff } from '../common/Buff';
 import { Character } from '../common/Character';
 import { BattlePage } from './subpages/Battle';
 import { DemoScene, Scene } from '../common/Scene';
+import { Result } from 'postcss';
 
 // 经过 1 年所消耗的时间
 const AgeTimeUnit = 10;
@@ -536,7 +537,27 @@ const TalentItem: Component<TalentItemProps> = (props) => {
     </button>
 }
 
-export function useEventHistoryBar(): [Component, (text: string, isChoice: boolean) => void] {
+
+export type TemplatePositionText = 'SourceName' | 'TargetName' | 'ActionName' | 'ActionResult';
+
+type ParseTemplate<T extends string, R extends {}> =
+    T extends `${infer Before}{${infer Actual}}${infer After}` ?
+    ParseTemplate<`${After}`, R & (IsTemplateString<Actual> extends true ? { [K in Actual]: Actual } : never)> : R;
+
+type IsTemplateString<Str extends string> = Str extends TemplatePositionText ? true : false;
+
+// type MatchTemplateString<T extends string, R extends string[]> = T extends `${infer Before}{${infer Actual}}${infer After}` ? MatchTemplateString<`${After}`, [...R, Actual]> : R;
+
+export function useEventHistoryBar():
+    [
+        Component,
+        (text: string, isChoice: boolean) => void,
+        {
+            buildText: (position: TemplatePositionText, text: string) => void,
+            setTemplate: <S extends ParseTemplate<S, {}> extends never ? never : string>(textTemplate: S) => void,
+            commitBuild: (isChoice: boolean) => void
+        }
+    ] {
     const [history, setHistory] = createSignal<EventHistoryItem[]>([]);
 
     let eventHistoryContainer: HTMLUListElement | undefined;
@@ -548,9 +569,33 @@ export function useEventHistoryBar(): [Component, (text: string, isChoice: boole
         }
     }
 
+    let textParams: Partial<{ [K in TemplatePositionText]: string }> = {};
+    let textTemplate = '';
+    const buildText = (position: TemplatePositionText, text: string) => {
+        textParams[position] = text;
+    }
+    const setTemplate = <S extends ParseTemplate<S, {}> extends never ? never : string>(t: S) => {
+        textTemplate = t;
+    }
+    const commitBuild = (isChoice: boolean) => {
+        const text = textTemplate.replace(/{(\w+)}/g, (match, p1) => {
+            let result = textParams[p1 as TemplatePositionText];
+            if (!result) {
+                console.log('commitBuild', textParams, textTemplate, text);
+                throw "无法匹配到模板，缺少必要参数";
+            }
+            return result;
+        })
+        textParams = {};
+        textTemplate = '';
+        insertHistory(text, isChoice);
+    }
+
+    // setTemplate('asd {SourceName}, {TargetName}, {ActionName},{ActionName} asd{1123')
     return [
         () => <EventsHistoryBar ref={eventHistoryContainer} history={history()} />,
         insertHistory,
+        { buildText, setTemplate, commitBuild }
     ]
 
 
