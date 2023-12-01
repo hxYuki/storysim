@@ -14,7 +14,7 @@ export interface Buff {
 }
 
 // 为空时表示战斗外效果
-type BuffStage = '' | 'damage-taking' | 'damage-dealing' | 'before-action' | 'after-action';
+export type BuffStage = '' | 'damage-taking' | 'damage-dealing' | 'before-action' | 'after-action';
 
 export class Buff {
     private leap?: number;

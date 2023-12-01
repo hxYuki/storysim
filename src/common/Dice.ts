@@ -76,7 +76,7 @@ export const CharacterInitalSpeedDice = new CharacterSpeedDice();
 // 正的属性差距 与 大成功概率 关系为 (1+x)/(20+x)
 // 负的属性差距 与 大失败概率 关系为 x/20
 class CharacterPropertyDamageDice implements Dice {
-    diceClasses:string[] = [];
+    diceClasses: string[] = [];
     withTags(...tags: string[]): Dice {
         return withTags(this, ...tags);
     }

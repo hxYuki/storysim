@@ -1,5 +1,5 @@
 import { createSignal, on } from "solid-js";
-import { Buff } from "./Buff";
+import { Buff, BuffStage } from "./Buff";
 import { CharacterBaseProperty, CharacterStatus, CharacterStatusCurentProperty, CharacterStatusProperty, SocialProperty, createEmptyStatus } from "./CharacterStatus";
 import { DiceContext, DiceModifier } from "./Dice";
 import { CharacterOperation, WithCharacterContext } from "./game-context";
@@ -111,9 +111,16 @@ export class Character implements CharacterOperation {
 
     // 由自身向目标施加伤害/治疗, 根据自身buff对数值进行修饰
     dealDamage(target: Character, damage: Damage) {
+        let ctx = this.ctxMaker!();
+        ctx.damageDealing = damage;
+        this.triggerBuff('damage-dealing', ctx);
         damage = this.dealingDamageModifier.reduce((dmg, mod) => mod(dmg), damage);
 
-        target.takeDamage(damage, this);
+        damage = target.takeDamage(damage, this);
+
+        this.removeOutDatedBuff();
+        ctx = this.ctxMaker!();
+        ctx.damageDealt = damage;
     }
     dealHealing(target: Character, damage: Damage) {
 
@@ -122,6 +129,14 @@ export class Character implements CharacterOperation {
 
     // 接受来自目标的伤害/治疗, 根据自身buff对数值进行修饰
     takeDamage(damage: Damage, from: Character) {
+        let ctx = this.ctxMaker!();
+        ctx.damageTaking = damage;
+        ctx.damageSource = from;
+
+        this.onBeforeTakeDamage.forEach(cb => cb(ctx, from, damage));
+        // this.buffs().filter(b => b.stage === 'damage-taking').forEach(b => b.onEffect(ctx));
+        this.triggerBuff('damage-taking', ctx);
+
         damage = this.takingDamageModifier.reduce((dmg, mod) => mod(dmg), damage);
 
         // 伤害，将造成角色状态值下降
@@ -131,6 +146,14 @@ export class Character implements CharacterOperation {
             this.statsModifyWithLowerbound(damage.raw);
         } else
             this.statsModifyBy(damage.raw);
+
+        this.removeOutDatedBuff();
+        ctx = this.ctxMaker!();
+        ctx.damageTaken = damage;
+
+        this.onAfterTakeDamage.forEach(cb => cb(ctx, from, damage));
+
+        return damage;
     };
     takeHealing(damage: Damage, from: Character) {
 
@@ -139,21 +162,15 @@ export class Character implements CharacterOperation {
 
     beforeMove(ctx: WithCharacterContext) {
 
-
-        let toRemove: Buff[] = [];
-        this.buffs().filter(b => b.stage !== '').forEach(b => {
-            if (b.remainingTime) {
-                b.remainingTime--;
-                if (b.remainingTime <= 0) {
-                    toRemove.push(b);
-                }
-            }
-        })
-        this.removeBuff(toRemove);
+        this.triggerBuff('before-action');
+        this.onBeforeMove.forEach(cb => cb(ctx));
+        this.removeOutDatedBuff();
     }
     afterMove(ctx: WithCharacterContext) {
 
+        this.triggerBuff('after-action');
         this.onAfterMove.forEach(cb => cb(ctx));
+        this.removeOutDatedBuff();
     }
     addMoveCallback(when: 'before' | 'after', cb: (ctx: WithCharacterContext) => void) {
         if (when === 'before')
@@ -171,8 +188,8 @@ export class Character implements CharacterOperation {
     onBeforeMove: ((ctx: WithCharacterContext) => void)[] = [];
     onAfterMove: ((ctx: WithCharacterContext) => void)[] = [];
 
-    onBeforeTakeDamage: ((from: Character, dmg: Damage) => void)[] = [];
-    onAfterTakeDamage: ((from: Character, dmg: Damage) => void)[] = [];
+    onBeforeTakeDamage: ((ctx: WithCharacterContext, from: Character, dmg: Damage) => void)[] = [];
+    onAfterTakeDamage: ((ctx: WithCharacterContext, from: Character, dmg: Damage) => void)[] = [];
 
     takingDamageModifier: ((dmg: Damage) => Damage)[] = [];
     dealingDamageModifier: ((dmg: Damage) => Damage)[] = [];
@@ -187,8 +204,23 @@ export class Character implements CharacterOperation {
             buff = [buff]
         }
         let buffs = buff as Buff[];
+        console.log(this);
         this.buffsGS[1](bs => bs.filter(b => !buffs.includes(b)));
-        buffs.forEach(this.removeBuff);
+        buffs.forEach(b => b.onRemove?.(this.ctxMaker!()));
+    }
+
+    triggerBuff(stage: BuffStage, ctx?: WithCharacterContext) {
+        this.buffs().filter(b => b.stage === stage).forEach(b => {
+            if (b.remainingTime)
+                b.remainingTime -= 1;
+            b.onEffect(ctx ?? this.ctxMaker!());
+        });
+        // this.removeOutDatedBuff();
+    }
+    removeOutDatedBuff() {
+        let toRemove = this.buffs().filter((b) => b.remainingTime! <= 0);
+        toRemove.forEach(b => b.onRemove?.(this.ctxMaker!()));
+        this.removeBuff(toRemove);
     }
 
     addRelic(relic: Relic) { }

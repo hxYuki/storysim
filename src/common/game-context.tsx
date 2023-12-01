@@ -3,6 +3,7 @@ import { DiceContext } from "./Dice";
 import { ConditionToken, EventItem, SingleEvent } from "./events";
 import { Character } from './Character';
 import { Scene } from "./Scene";
+import { Damage } from "./Damage";
 
 export type GameContext = BeforeGameContext | StartedGameContext | AfterGameContext;
 export interface BeforeGameContext {
@@ -52,6 +53,13 @@ export interface StartedGameContext {
 type CharacteredCtx = {
     currentCharacter: Character;
     createDiceContext: () => DiceContext;
+
+    damageTaking?: Damage;
+    damageTaken?: Damage;
+    damageSource?: Character;
+
+    damageDealing?: Damage;
+    damageDealt?: Damage;
 }
 export type WithCharacterContext = Omit<StartedGameContext, 'withCharacter'> & CharacteredCtx;
 

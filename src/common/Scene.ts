@@ -29,6 +29,8 @@ export interface SceneRuntime {
     removeAlly: (ally: Character | Character[]) => void;
 
     writeBattleRecord: (str: string) => void;
+
+    advanceCharacterAction: (character: Character, percent: number) => void;
 }
 
 export const DemoScene: Scene = {

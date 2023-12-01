@@ -1,4 +1,5 @@
-import { Buff } from "./Buff";
+import { writeSignal } from "solid-js/types/reactive/signal";
+import { Buff, BuffStage } from "./Buff";
 import { Character } from "./Character";
 import { Damage } from "./Damage";
 import { CharacterPropertyCheckEfficientDice } from "./Dice";
@@ -63,7 +64,7 @@ export const EscapeAction: CharacterAction = {
     description: '虽然不一定总是好用，但至少一个轻松的选择。',
     disabledText: '总会有事情是避无可避，必须面对的。',
     act: (ctx, targets) => {
-        // TODO:
+        // TODO: 判定逃跑 离开战斗
         ctx.player.disableActions([0]);
     },
     targetChoosingAuto: (ctx, triggeredBy) => []
@@ -92,6 +93,8 @@ export const AttackAction: AttackAction = {
 }
 
 class DefendDamageReduce extends Buff {
+    id = "defend-damage-reduce";
+    name = "防御减伤";
     constructor(ratio: number) {
         super();
         this.ratio = ratio;
@@ -124,11 +127,51 @@ export const DefendAction: CharacterAction = {
     targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter]
 }
 
+
+class DodgePreparation extends Buff {
+    id = "dodge-preparation";
+    name = "闪避预兆";
+    stage: BuffStage = 'damage-taking'
+
+    damageReducer = (damage: Damage) => {
+        damage.multiplyBy(0);
+        return damage;
+    }
+
+    onEffect = (ctx: WithCharacterContext) => {
+        // this.remainingTime--;
+        const diceCtx = ctx.createDiceContext();
+        const result = CharacterPropertyCheckEfficientDice.withTags('dodge').dice(diceCtx, ctx.currentCharacter.properties().Dexterity, ctx.damageSource!.properties().Dexterity);
+
+        if (result.result === 'success' || result.result === 'terrific') {
+            ctx.currentCharacter.takingDamageModifier.push(this.damageReducer);
+            ctx.currentScene!.runtime!.writeBattleRecord(`${ctx.currentCharacter.name}闪避了${ctx.damageSource!.name}的攻击。`);
+
+        }
+        if (result.result === 'terrific') {
+            // TODO: 反击
+            ctx.currentScene!.runtime!.advanceCharacterAction(ctx.currentCharacter, 1);
+            ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}并进行了反击。`)
+
+        }
+    }
+    onRemove = (ctx: WithCharacterContext) => {
+        // ctx.currentCharacter.takingDamageModifier = ctx.currentCharacter.takingDamageModifier.filter(f => f !== this.damageReducer);
+    }
+
+
+    constructor() {
+        super();
+    }
+    remainingTime = 1;
+}
 export const DodgeAction: CharacterAction = {
     id: 3,
     name: '闪避',
     type: 'dodge', // 判定，完全躲避伤害并提供额外的反击机会
     description: '躲避将要来袭的打击。',
-    act: (ctx, targets) => { },
+    act: (ctx, targets) => {
+        ctx.currentCharacter.applyBuff(new DodgePreparation());
+    },
     targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter]
 }
