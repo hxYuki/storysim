@@ -141,17 +141,23 @@ class DodgePreparation extends Buff {
     onEffect = (ctx: WithCharacterContext) => {
         // this.remainingTime--;
         const diceCtx = ctx.createDiceContext();
-        const result = CharacterPropertyCheckEfficientDice.withTags('dodge').dice(diceCtx, ctx.currentCharacter.properties().Dexterity, ctx.damageSource!.properties().Dexterity);
+        const result = CharacterPropertyCheckEfficientDice
+            .withTags('dodge')
+            .dice(diceCtx, ctx.currentCharacter.properties().Dexterity, ctx.damageSource!.properties().Dexterity);
 
         if (result.result === 'success' || result.result === 'terrific') {
             ctx.currentCharacter.takingDamageModifier.push(this.damageReducer);
-            ctx.currentScene!.runtime!.writeBattleRecord(`${ctx.currentCharacter.name}闪避了${ctx.damageSource!.name}的攻击。`);
+            ctx.currentScene!.runtime!.textBuilder.addText("ActionResult", "闪避");
+            ctx.currentScene!.runtime!.textBuilder.setTemplate('{SourceName} 对 {TargetName} 使用了 {ActionName}，但是被 {ActionResult} 了！');
+            // ctx.currentScene!.runtime!.writeBattleRecord(`${ctx.currentCharacter.name}闪避了${ctx.damageSource!.name}的攻击。`);
 
         }
         if (result.result === 'terrific') {
             // TODO: 反击
             ctx.currentScene!.runtime!.advanceCharacterAction(ctx.currentCharacter, 1);
-            ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}并进行了反击。`)
+            ctx.currentScene!.runtime!.textBuilder.addText("ActionResult", "完美闪避");
+            ctx.currentScene!.runtime!.textBuilder.setTemplate('{SourceName} 对 {TargetName} 使用了 {ActionName}，但是被 {ActionResult} ！{TargetName} 抓到了破绽！');
+            // ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}并进行了反击。`)
 
         }
     }

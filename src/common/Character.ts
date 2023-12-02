@@ -204,7 +204,7 @@ export class Character implements CharacterOperation {
             buff = [buff]
         }
         let buffs = buff as Buff[];
-        console.log(this);
+
         this.buffsGS[1](bs => bs.filter(b => !buffs.includes(b)));
         buffs.forEach(b => b.onRemove?.(this.ctxMaker!()));
     }

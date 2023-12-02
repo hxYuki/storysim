@@ -1,3 +1,4 @@
+import { TextBuilder } from "../pages/game";
 import { Character } from "./Character";
 import { StartedGameContext } from "./game-context";
 
@@ -29,6 +30,7 @@ export interface SceneRuntime {
     removeAlly: (ally: Character | Character[]) => void;
 
     writeBattleRecord: (str: string) => void;
+    textBuilder: TextBuilder;
 
     advanceCharacterAction: (character: Character, percent: number) => void;
 }

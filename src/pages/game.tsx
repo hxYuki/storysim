@@ -546,17 +546,21 @@ type ParseTemplate<T extends string, R extends {}> =
 
 type IsTemplateString<Str extends string> = Str extends TemplatePositionText ? true : false;
 
+export type TextBuilder = {
+    isBuilding: () => boolean;
+    addText: (position: TemplatePositionText, text: string) => TextBuilder;
+    text: (position: TemplatePositionText) => string | undefined;
+    setTemplate: <S extends ParseTemplate<S, {}> extends never ? never : string>(textTemplate: S) => TextBuilder;
+    commitBuild: (isChoice: boolean) => TextBuilder;
+};
+
 // type MatchTemplateString<T extends string, R extends string[]> = T extends `${infer Before}{${infer Actual}}${infer After}` ? MatchTemplateString<`${After}`, [...R, Actual]> : R;
 
 export function useEventHistoryBar():
     [
         Component,
         (text: string, isChoice: boolean) => void,
-        {
-            buildText: (position: TemplatePositionText, text: string) => void,
-            setTemplate: <S extends ParseTemplate<S, {}> extends never ? never : string>(textTemplate: S) => void,
-            commitBuild: (isChoice: boolean) => void
-        }
+        TextBuilder
     ] {
     const [history, setHistory] = createSignal<EventHistoryItem[]>([]);
 
@@ -571,31 +575,50 @@ export function useEventHistoryBar():
 
     let textParams: Partial<{ [K in TemplatePositionText]: string }> = {};
     let textTemplate = '';
-    const buildText = (position: TemplatePositionText, text: string) => {
-        textParams[position] = text;
-    }
-    const setTemplate = <S extends ParseTemplate<S, {}> extends never ? never : string>(t: S) => {
-        textTemplate = t;
-    }
-    const commitBuild = (isChoice: boolean) => {
-        const text = textTemplate.replace(/{(\w+)}/g, (match, p1) => {
-            let result = textParams[p1 as TemplatePositionText];
-            if (!result) {
-                console.log('commitBuild', textParams, textTemplate, text);
-                throw "无法匹配到模板，缺少必要参数";
+    let isCurrentBuilding = false;
+
+    const builder: TextBuilder = {
+        isBuilding: () => isCurrentBuilding,
+        addText: (position: TemplatePositionText, text: string) => {
+            isCurrentBuilding = true;
+            textParams[position] = text;
+            return builder;
+        },
+        text: (position: TemplatePositionText) => {
+            return textParams[position] ?? undefined
+        },
+        setTemplate: <S extends ParseTemplate<S, {}> extends never ? never : string>(t: S) => {
+            isCurrentBuilding = true;
+            textTemplate = t;
+            return builder;
+        },
+        commitBuild: (isChoice: boolean) => {
+            if (!isCurrentBuilding) {
+                console.error('尚未开始构建文本');
+                throw "尚未开始构建文本";
             }
-            return result;
-        })
-        textParams = {};
-        textTemplate = '';
-        insertHistory(text, isChoice);
-    }
+            const text = textTemplate.replace(/{(\w+)}/g, (match, p1) => {
+                let result = textParams[p1 as TemplatePositionText];
+                if (!result) {
+                    console.error('commitBuild', textParams, textTemplate, text);
+                    throw "无法匹配到模板，缺少必要参数";
+                }
+                return result;
+            })
+            textParams = {};
+            textTemplate = '';
+            isCurrentBuilding = false;
+            insertHistory(text, isChoice);
+            return builder;
+        }
+    };
+
 
     // setTemplate('asd {SourceName}, {TargetName}, {ActionName},{ActionName} asd{1123')
     return [
         () => <EventsHistoryBar ref={eventHistoryContainer} history={history()} />,
         insertHistory,
-        { buildText, setTemplate, commitBuild }
+        builder
     ]
 
 

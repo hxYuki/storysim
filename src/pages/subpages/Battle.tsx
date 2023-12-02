@@ -43,10 +43,18 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                 return unitActionDistance.get(a)! / a.properties().Speed - unitActionDistance.get(b)! / b.properties().Speed;
             });
 
-        action.act(ctx, targets);
+        // 行动开始前会设置默认模板以及文本参数
+        // 可以在行动中进行覆盖
+        // 行动结束后会提交文本
+        textBuilder
+            .addText('SourceName', character.name)
+            .addText('TargetName', targets.map(t => t.name).join('、'))
+            .addText('ActionName', action.name)
+            .setTemplate("{SourceName} 对 {TargetName} 使用了 {ActionName}");
 
-        // TODO: 触发行动 文本合并、 行动效果文本
-        addHistory(`${character.name} 对 ${targets.map(t => t.name).join('、')} 使用了 ${action.name}`, false);
+        action.act(ctx, targets);
+        textBuilder.commitBuild(false);
+
 
         const playerIndex = readyTargets.indexOf(ctx.player);
         if (playerIndex !== -1 && playerIndex < readyTargets.length - 1) {
@@ -57,10 +65,11 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                 CharacterMove(t, character);
             });
 
-        }
-        readyTargets.forEach((t) => {
-            CharacterMove(t, character);
-        });
+        } else
+            // 回应单位触发行动
+            readyTargets.forEach((t) => {
+                CharacterMove(t, character);
+            });
     }
 
     const CharacterMove = (character: Character, triggeredBy?: Character) => {
@@ -206,6 +215,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                 writeBattleRecord(str) {
                     addHistory(str, false);
                 },
+                textBuilder,
                 advanceCharacterAction(character: Character, percent: number) {
                     let dis = unitActionDistance.get(character)!;
                     dis = dis - percent * dis;
@@ -239,11 +249,11 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
 
         setCopiedCtx(ctx);
 
-        textBuilder.buildText('SourceName', "123");
-        textBuilder.buildText('TargetName', "456");
-        textBuilder.buildText('ActionName', "789");
-        textBuilder.setTemplate("{SourceName}对{TargetName}使用了{ActionName}");
-        textBuilder.commitBuild(false);
+        // textBuilder.buildText('SourceName', "123");
+        // textBuilder.buildText('TargetName', "456");
+        // textBuilder.buildText('ActionName', "789");
+        // textBuilder.setTemplate("{SourceName}对{TargetName}使用了{ActionName}");
+        // textBuilder.commitBuild(false);
 
         // gameloopTimer = window.setInterval(() => {
         //     if (isPlayerMove() || isRunning()) {
