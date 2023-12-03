@@ -2,7 +2,7 @@ import { CharacterStatus } from "./CharacterStatus";
 import { DiceContext } from "./Dice";
 import { ConditionToken, EventItem, SingleEvent } from "./events";
 import { Character } from './Character';
-import { Scene } from "./Scene";
+import { ConditionReturn, Scene } from "./Scene";
 import { Damage } from "./Damage";
 
 export type GameContext = BeforeGameContext | StartedGameContext | AfterGameContext;
@@ -37,7 +37,7 @@ export interface StartedGameContext {
     time: () => number;
 
     startBattle: (sceneId: number) => void;
-    endBattle: () => void;
+    endBattle: (battleResult: ConditionReturn) => void;
 
     tokenSet: (token: string, stackable?: boolean) => void;
     // 0: 不存在，>=1: 存在，层数

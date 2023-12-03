@@ -20,6 +20,8 @@ export interface CharacterAction {
 
     disabled?: boolean;
     disabledText?: string;
+
+    textBuildTemplate?: string;
 }
 export type ActoinType = 'escape' | 'attack' | 'defend' | 'dodge' | 'enhance' | 'weaken' | 'heal' | 'special';
 export interface AttackAction extends CharacterAction {
@@ -44,6 +46,8 @@ export interface SpecialAction extends CharacterAction {
     type: 'special';
 }
 
+const SelfTargetActionTemplate: string = '{SourceName} 使用了 {ActionName}。';
+
 // TODO：各类型行动 目标选择函数 默认实现
 
 export const NOPAction: CharacterAction = {
@@ -52,11 +56,34 @@ export const NOPAction: CharacterAction = {
     type: 'special',
     description: '什么都不做。',
     act: (ctx, targets) => {
-        ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}呆在原地，一动也不动。`)
+        // ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}呆在原地，一动也不动。`)
     },
-    targetChoosingAuto: (ctx, triggeredBy) => []
+    targetChoosingAuto: (ctx, triggeredBy) => [],
+
+    textBuildTemplate: '',
 }
 
+class EscapeTryingBuff extends Buff {
+    id = "escape-trying";
+    name = "逃跑尝试";
+    stage: BuffStage = 'before-action';
+    onEffect = (ctx: WithCharacterContext) => {
+        if (this.remainingTime! > 1)
+            ctx.currentScene!.runtime!.writeBattleRecord(`${ctx.currentCharacter.name} 正在努力逃跑。`);
+    }
+    onApply = (ctx: WithCharacterContext) => {
+        ctx.currentCharacter.disableActions(ctx.currentCharacter.actionList().map(a => a.id));
+    }
+    onRemove = (ctx: WithCharacterContext) => {
+        ctx.currentCharacter.enableActions(ctx.currentCharacter.actionList().map(a => a.id));
+        ctx.currentScene!.runtime!.battleEnd({ result: 'Escaped', text: '逃跑' });
+    }
+
+    constructor(perparationTurn = 3) {
+        super();
+        this.remainingTime = perparationTurn;
+    }
+}
 export const EscapeAction: CharacterAction = {
     id: 0,
     name: '逃跑',
@@ -65,9 +92,12 @@ export const EscapeAction: CharacterAction = {
     disabledText: '总会有事情是避无可避，必须面对的。',
     act: (ctx, targets) => {
         // TODO: 判定逃跑 离开战斗
-        ctx.player.disableActions([0]);
+        // ctx.player.disableActions([0]);
+        ctx.currentCharacter.applyBuff(new EscapeTryingBuff());
     },
-    targetChoosingAuto: (ctx, triggeredBy) => []
+    targetChoosingAuto: (ctx, triggeredBy) => [],
+
+    textBuildTemplate: SelfTargetActionTemplate,
 }
 
 export const AttackAction: AttackAction = {
@@ -124,7 +154,9 @@ export const DefendAction: CharacterAction = {
 
         targets[0].applyBuff(new DefendDamageReduce(ratio));
     },
-    targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter]
+    targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter],
+
+    textBuildTemplate: SelfTargetActionTemplate,
 }
 
 
@@ -179,5 +211,7 @@ export const DodgeAction: CharacterAction = {
     act: (ctx, targets) => {
         ctx.currentCharacter.applyBuff(new DodgePreparation());
     },
-    targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter]
+    targetChoosingAuto: (ctx, triggeredBy) => [ctx.currentCharacter],
+
+    textBuildTemplate: SelfTargetActionTemplate,
 }

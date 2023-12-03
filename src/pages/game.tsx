@@ -16,7 +16,7 @@ import { Relic } from '../common/relic';
 import { Buff } from '../common/Buff';
 import { Character } from '../common/Character';
 import { BattlePage } from './subpages/Battle';
-import { DemoScene, Scene } from '../common/Scene';
+import { ConditionReturn, DemoScene, Scene, SCENE_LIST } from '../common/Scene';
 import { Result } from 'postcss';
 
 // 经过 1 年所消耗的时间
@@ -144,8 +144,18 @@ const GamePage: Component = () => {
             return timeAccumulated();
         },
 
-        startBattle: (sceneId: number) => { },
-        endBattle: () => { },
+        startBattle: (sceneId: number) => {
+            const scene = SCENE_LIST.find(s => s.id === sceneId);
+            if (!scene) throw new Error('invalid scene id');
+
+            setBattleScene(scene);
+            setGameState('battle');
+        },
+        endBattle: (result: ConditionReturn) => {
+            // TODO: 处理战斗结果
+            setBattleScene(undefined);
+            setGameState('game-start');
+        },
 
         tokenSet(token, stackable = false) {
             const t = findToken(token) as StackableToken;
@@ -339,13 +349,13 @@ const GamePage: Component = () => {
         setAvailableEvents(events);
 
         // FIXME: 测试场景，完成后移除
-        setBattleScene(DemoScene)
+        makeGameContext().startBattle(DemoScene.id);
     })
 
     const [talentCadidates, setTalentCadidates] = createSignal<Talent[]>([]);
 
     return <>
-        {/* <Switch>
+        <Switch>
             <Match when={gameState() === 'talent-choose'}>
                 <TelentChoosePage talents={talentCadidates()} talentPoints={3} finish={finishTalentChoose} />
             </Match>
@@ -358,10 +368,9 @@ const GamePage: Component = () => {
                 <ActionBar options={currentSingleEvent()?.options} handler={handleOption} gameContext={makeGameContext()} />
             </Match>
             <Match when={gameState() === 'battle'}>
-
+                <BattlePage scene={battleScene()} makeContext={makeGameContext.bind(this)} />
             </Match>
-        </Switch> */}
-        <BattlePage scene={battleScene()} makeContext={makeGameContext.bind(this)} />
+        </Switch>
     </>
 }
 export default GamePage;
@@ -600,7 +609,7 @@ export function useEventHistoryBar():
             const text = textTemplate.replace(/{(\w+)}/g, (match, p1) => {
                 let result = textParams[p1 as TemplatePositionText];
                 if (!result) {
-                    console.error('commitBuild', textParams, textTemplate, text);
+                    console.error('commitBuild', textParams, textTemplate);
                     throw "无法匹配到模板，缺少必要参数";
                 }
                 return result;

@@ -106,7 +106,21 @@ export class Character implements CharacterOperation {
             return a;
         }));
     }
+    enableActions(actionsId: number[]) {
+        this.actionListGS[1](actions => actions.map(a => {
+            if (actionsId.includes(a.id)) {
+                return {
+                    ...a,
+                    disabled: false,
+                }
+            }
+            return a;
+        }));
+    }
 
+    isEscaping() {
+        return this.buffsGS[0]().some(b => b.id === 'escape-trying');
+    }
 
 
     // 由自身向目标施加伤害/治疗, 根据自身buff对数值进行修饰
@@ -219,7 +233,6 @@ export class Character implements CharacterOperation {
     }
     removeOutDatedBuff() {
         let toRemove = this.buffs().filter((b) => b.remainingTime! <= 0);
-        toRemove.forEach(b => b.onRemove?.(this.ctxMaker!()));
         this.removeBuff(toRemove);
     }
 

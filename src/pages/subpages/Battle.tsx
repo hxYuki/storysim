@@ -1,6 +1,6 @@
 import { Component, For, Index, Match, Show, Switch, createEffect, createSignal, onCleanup, onMount } from 'solid-js'
 import { PercentBar, useEventHistoryBar } from '../game'
-import { Scene } from '../../common/Scene'
+import { ConditionReturn, Scene } from '../../common/Scene'
 import { StartedGameContext, WithCharacterContext } from '../../common/game-context';
 import { Character } from '../../common/Character';
 import { CharacterAction, NOPAction } from '../../common/CharacterAction';
@@ -50,10 +50,13 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
             .addText('SourceName', character.name)
             .addText('TargetName', targets.map(t => t.name).join('、'))
             .addText('ActionName', action.name)
-            .setTemplate("{SourceName} 对 {TargetName} 使用了 {ActionName}");
+            .setTemplate(action.textBuildTemplate ?? "{SourceName} 对 {TargetName} 使用了 {ActionName}");
 
         action.act(ctx, targets);
-        textBuilder.commitBuild(false);
+
+        if (action.id !== NOPAction.id) {
+            textBuilder.commitBuild(false);
+        }
 
 
         const playerIndex = readyTargets.indexOf(ctx.player);
@@ -84,10 +87,14 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
             character.beforeMove(props.makeContext().withCharacter(character));
             CharacterAutoMove(character, triggeredBy);
             character.afterMove(props.makeContext().withCharacter(character));
+
+            checkEndCondition();
         }
         if (character.properties().Speed < unitActionDistance.get(character)!) {
             throw new Error('不应该行动的角色，请检查');
         }
+
+        // 如果角色被触发行动，则已经行动完毕，接下来重新开始计算行动距离，否则将减去超出的行动距离
         if (triggeredBy) {
             unitActionDistance.set(character, ActDistance)
         } else {
@@ -113,6 +120,9 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         setIsPlayerMove(true);
         playerTriggeredBy = triggeredBy;
 
+        if (isBattleEnd || player().isEscaping()) {
+            FinishPlayerMove(NOPAction);
+        }
     }
     const FinishPlayerMove = (action: CharacterAction) => {
         if (isPlayerMove()) {
@@ -120,10 +130,13 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         } else {
             throw new Error('错误触发：玩家不在行动中');
         }
-        // TODO
+
         const ctx = props.makeContext().withCharacter(player());
         excuteAction(action, ctx, playerTriggeredBy, player());
         // action.act(ctx.withCharacter(player()), action.targetChoosingAuto(ctx));
+
+        // 检查战斗结束条件
+        checkEndCondition();
 
         // 最后进行剩余角色行动
         characterWaitToAct.splice(0, characterWaitToAct.length).forEach((c) => {
@@ -133,12 +146,22 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         setIsPlayerMove(false);
         player().afterMove(props.makeContext().withCharacter(player()));
     }
-    const keepMove = () => {
-        while (!isPlayerMove()) {
-            nextMove();
+    const checkEndCondition = () => {
+        for (const condition of props.scene!.endConditions) {
+            let res = condition(props.makeContext());
+            if (res) {
+                props.scene!.runtime!.battleEnd(res);
+            }
         }
     }
+    let isBattleEnd: ConditionReturn | undefined = undefined;
     const nextMove = () => {
+
+        if (isBattleEnd) {
+            // 检测到战斗结束，回到事件层
+            props.makeContext().endBattle(isBattleEnd);
+            return;
+        }
         setIsRunning(true);
         // const ctx = props.makeContext();
 
@@ -221,6 +244,11 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                     dis = dis - percent * dis;
                     unitActionDistance.set(character, dis);
                 },
+                battleEnd(result) {
+                    addHistory(`${result.text}，战斗结束`, false);
+
+                    isBattleEnd = result;
+                },
             }
         }
     }
@@ -279,10 +307,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
             return;
         }
 
-        // TODO: gameLoop 互动
         FinishPlayerMove(action);
-
-        // keepMove();
     }
 
     return (
