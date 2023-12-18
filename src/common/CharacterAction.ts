@@ -16,6 +16,8 @@ export interface CharacterAction {
 
     act(ctx: WithCharacterContext, targets: Character[]): void;
 
+    // 当 needTarget 为 true，选择目标返回空数组时，行动会被替换为 NOTargetAction
+    needsTarget?: boolean;
     targetChoosingAuto(ctx: WithCharacterContext, triggeredBy?: Character): Character[];
 
     disabled?: boolean;
@@ -50,13 +52,30 @@ const SelfTargetActionTemplate: string = '{SourceName} 使用了 {ActionName}。
 
 // TODO：各类型行动 目标选择函数 默认实现
 
+export const NoTargetAction: CharacterAction = {
+    id: -2,
+    name: '无目标',
+    type: 'special',
+    description: '未找到目标的失败行动。',
+    act: (ctx, targets) => {
+        // ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}呆在原地，一动也不动。`)
+    },
+    targetChoosingAuto: (ctx, triggeredBy) => [],
+
+    textBuildTemplate: '{SourceName} 使用了 {ActionName}，但是没有找到目标。',
+}
+export const NoTargetActionFromAction: (action: CharacterAction) => CharacterAction = (action) => {
+    return {
+        ...NoTargetAction,
+        name: action.name,
+    }
+}
 export const NOPAction: CharacterAction = {
     id: -1,
     name: '无操作',
     type: 'special',
     description: '什么都不做。',
     act: (ctx, targets) => {
-        // ctx.currentScene?.runtime?.writeBattleRecord(`${ctx.currentCharacter.name}呆在原地，一动也不动。`)
     },
     targetChoosingAuto: (ctx, triggeredBy) => [],
 
@@ -64,7 +83,7 @@ export const NOPAction: CharacterAction = {
 }
 
 class EscapeTryingBuff extends Buff {
-    id = "escape-trying";
+    static id = "escape-trying";
     name = "逃跑尝试";
     stage: BuffStage = 'before-action';
     onEffect = (ctx: WithCharacterContext) => {
@@ -84,6 +103,12 @@ class EscapeTryingBuff extends Buff {
         this.remainingTime = perparationTurn;
     }
 }
+
+// TODO: 实现，Buff 标识一个角色已经逃跑，不会成为一般行动目标
+export class EscapedBuff extends Buff {
+    static id = 'escaped';
+}
+
 export const EscapeAction: CharacterAction = {
     id: 0,
     name: '逃跑',
@@ -123,7 +148,7 @@ export const AttackAction: AttackAction = {
 }
 
 class DefendDamageReduce extends Buff {
-    id = "defend-damage-reduce";
+    static id = "defend-damage-reduce";
     name = "防御减伤";
     constructor(ratio: number) {
         super();
@@ -161,7 +186,7 @@ export const DefendAction: CharacterAction = {
 
 
 class DodgePreparation extends Buff {
-    id = "dodge-preparation";
+    static id = "dodge-preparation";
     name = "闪避预兆";
     stage: BuffStage = 'damage-taking'
 

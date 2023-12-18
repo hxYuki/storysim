@@ -84,6 +84,7 @@ export type EventProperty = {
     triggered?: boolean;
 
     // repeatable 为 true 的事件可以重复触发
+    // default: false
     repeatable?: boolean;
 
     // active 为 true 的事件由玩家手动触发

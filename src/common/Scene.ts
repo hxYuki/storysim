@@ -1,5 +1,6 @@
 import { TextBuilder } from "../pages/game";
 import { Character } from "./Character";
+import { EscapedBuff } from "./CharacterAction";
 import { StartedGameContext } from "./game-context";
 
 
@@ -58,8 +59,11 @@ export const allEnemiesDiedEnd: BattleEndCondition = (ctx) => {
 };
 export const playerEscapedEnd: BattleEndCondition = (ctx) => {
     // TODO: 逃跑条件？
+    // TODO: 逃跑成功后给角色添加 `不可选中` 的 Buff，使 Action 选择目标时不会返回该角色，最后无法选择目标时将成为 NOPAction
     // 逃跑：经过一定回合准备（取决于判定），但是未必需要等到调用条件判定。。。
-    throw new Error('Not implemented');
+    if (ctx.player.buffs().some(b=>b.id === EscapedBuff.id)) {
+        return { result: 'Escaped', text: '逃跑' };
+    }
 };
 
 export const DemoScene: Scene = {

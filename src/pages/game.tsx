@@ -151,10 +151,15 @@ const GamePage: Component = () => {
             setBattleScene(scene);
             setGameState('battle');
         },
+        startBattkeWith: (scene: Scene) => {
+            setBattleScene(scene);
+            setGameState('battle');
+        },
         endBattle: (result: ConditionReturn) => {
-            // TODO: 处理战斗结果
+            // TODO: 处理战斗结果，或许应该传递给调用开始战斗的事件
             setBattleScene(undefined);
             setGameState('game-start');
+
         },
 
         tokenSet(token, stackable = false) {
@@ -204,10 +209,6 @@ const GamePage: Component = () => {
                 }
             }
         },
-        // playerStatSet: (stat, value) => {
-        //     setCurrentStatus(s => ({ ...s, [stat]: value }))
-        // },
-        // playerStatsSet: updateStatus,
 
         achievementReached: (achievement: string) => {
             console.error('TODO: achievementReached', 'not implemented');
@@ -349,7 +350,7 @@ const GamePage: Component = () => {
         setAvailableEvents(events);
 
         // FIXME: 测试场景，完成后移除
-        makeGameContext().startBattle(DemoScene.id);
+        // makeGameContext().startBattle(DemoScene.id);
     })
 
     const [talentCadidates, setTalentCadidates] = createSignal<Talent[]>([]);
@@ -499,7 +500,6 @@ const TelentChoosePage: Component<TalentChoosePageProps> = (props) => {
             setError(undefined);
         }
         else {
-            // TODO: 提示失败原因：超出点数
             if (!thisChosen[1]) {
                 setError('取消选择后点数不足');
             } else {

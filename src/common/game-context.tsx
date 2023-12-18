@@ -37,6 +37,7 @@ export interface StartedGameContext {
     time: () => number;
 
     startBattle: (sceneId: number) => void;
+    startBattkeWith: (scene: Scene) => void;
     endBattle: (battleResult: ConditionReturn) => void;
 
     tokenSet: (token: string, stackable?: boolean) => void;

@@ -3,7 +3,7 @@ import { PercentBar, useEventHistoryBar } from '../game'
 import { ConditionReturn, Scene } from '../../common/Scene'
 import { StartedGameContext, WithCharacterContext } from '../../common/game-context';
 import { Character } from '../../common/Character';
-import { CharacterAction, NOPAction } from '../../common/CharacterAction';
+import { CharacterAction, NOPAction, NoTargetActionFromAction } from '../../common/CharacterAction';
 import { CharacterInitalSpeedDice } from '../../common/Dice';
 
 
@@ -37,6 +37,9 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
     function excuteAction(action: CharacterAction, ctx: WithCharacterContext, triggeredBy: Character | undefined, character: Character) {
         const targets = action.targetChoosingAuto(ctx, triggeredBy);
 
+        if (action.needsTarget && targets.length === 0) {
+            action = NoTargetActionFromAction(action);
+        }
         // 因为回应其他单位提前行动的单位的该次行动不再会触发行动目标的回应
         const readyTargets = triggeredBy ? [] :
             targets.filter(t => unitActionDistance.get(t)! <= t.properties().Speed).sort((a, b) => {
