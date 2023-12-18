@@ -2,30 +2,41 @@ export type CharacterStatus = CharacterStatusProperty & CharacterStatusCurentPro
     Speed: number;
 };
 
-export type CharacterStatusProperty = {
+export interface CharacterStatusProperty {
     Health: number;
     Sanity: number;
     Stamina: number;
 }
-export type CharacterStatusCurentProperty = {
+export interface CharacterStatusCurentProperty {
     HealthCurrent: number;
     SanityCurrent: number;
     StaminaCurrent: number;
 }
 
-export type SocialProperty = {
+export interface SocialProperty {
     Moral: number;
     Money: number;
     Age: number;
 }
 
-export type CharacterBaseProperty = {
+export interface CharacterBaseProperty {
     Constitution: number;
     Dexterity: number;
     Intelligence: number;
     Intuition: number;
     Luck: number;
     Willpower: number;
+}
+export class CharacterBaseProperty {
+    static keys = () => ['Constitution', 'Dexterity', 'Intelligence', 'Intuition', 'Luck', 'Willpower'];
+    static nameMap = () => ({
+        Constitution: '体质',
+        Dexterity: '敏捷',
+        Intelligence: '智力',
+        Intuition: '直觉',
+        Luck: '幸运',
+        Willpower: '意志',
+    });
 }
 
 // export class MaxCurrentValue
