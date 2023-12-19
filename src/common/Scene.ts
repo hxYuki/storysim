@@ -1,6 +1,6 @@
 import { TextBuilder } from "../pages/game";
 import { Character } from "./Character";
-import { EscapedBuff } from "./CharacterAction";
+import { CharacterAction, EscapedBuff } from "./CharacterAction";
 import { StartedGameContext } from "./game-context";
 
 
@@ -42,6 +42,8 @@ export interface SceneRuntime {
     writeBattleRecord: (str: string) => void;
     textBuilder: TextBuilder;
 
+    setAvailableActions: (actions: CharacterAction[]) => void;
+
     advanceCharacterAction: (character: Character, percent: number) => void;
 
     battleEnd: (BattleResult: ConditionReturn) => void;
@@ -61,7 +63,7 @@ export const playerEscapedEnd: BattleEndCondition = (ctx) => {
     // TODO: 逃跑条件？
     // TODO: 逃跑成功后给角色添加 `不可选中` 的 Buff，使 Action 选择目标时不会返回该角色，最后无法选择目标时将成为 NOPAction
     // 逃跑：经过一定回合准备（取决于判定），但是未必需要等到调用条件判定。。。
-    if (ctx.player.buffs().some(b=>b.id === EscapedBuff.id)) {
+    if (ctx.player.buffs().some(b => b.id === EscapedBuff.id)) {
         return { result: 'Escaped', text: '逃跑' };
     }
 };
@@ -73,7 +75,9 @@ export const DemoScene: Scene = {
         new Character(-1, 'Dummy')
     ],
     allies: [],
-    setup: (ctx: StartedGameContext) => { },
+    setup: (ctx: StartedGameContext) => {
+        ctx.currentScene!.runtime!.setAvailableActions(ctx.player.actionList());
+    },
     cleanup: (ctx: StartedGameContext) => { },
 
     endConditions: [allEnemiesDiedEnd, playerDiedEnd],

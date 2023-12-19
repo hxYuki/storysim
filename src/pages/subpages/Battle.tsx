@@ -242,6 +242,9 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                     addHistory(str, false);
                 },
                 textBuilder,
+                setAvailableActions(actions) {
+                    setActions(actions);
+                },
                 advanceCharacterAction(character: Character, percent: number) {
                     let dis = unitActionDistance.get(character)!;
                     dis = dis - percent * dis;
@@ -265,7 +268,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
 
         const ctx = props.makeContext();
         // 备份角色行动表，以便于在战斗结束后恢复
-        setActions([...ctx.player.actionList()]);
+        // setActions([...ctx.player.actionList()]);
 
 
         setPlayer(ctx.player);
@@ -297,7 +300,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
         const ctx = props.makeContext();
 
         // 恢复角色行动表
-        ctx.player.replaceActionList(actions());
+        // ctx.player.replaceActionList(actions());
 
         props.scene?.cleanup(ctx);
 
@@ -327,7 +330,7 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
                         onClick={[nextMove, undefined]}
                     >继续</button>
                 }>
-                    <Index each={props.makeContext().player.actionList()}>{
+                    <Index each={actions()}>{
                         (action, index) =>
                             <button class={`rounded-lg p-2 m-1 border flex-auto basis-1/4 ${action().disabled ? 'bg-gray-300' : ''}`}
                                 onClick={[playerAct, action()]}
