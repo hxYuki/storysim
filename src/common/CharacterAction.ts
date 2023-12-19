@@ -18,7 +18,7 @@ export interface CharacterAction {
 
     // 当 needTarget 为 true，选择目标返回空数组时，行动会被替换为 NOTargetAction
     needsTarget?: boolean;
-    targetChoosingAuto(ctx: WithCharacterContext, triggeredBy?: Character): Character[];
+    targetChoosingAuto(ctx: WithCharacterContext, triggeredBy?: Character, filters?: ((c: Character) => boolean)[]): Character[];
 
     disabled?: boolean;
     disabledText?: string;
@@ -139,11 +139,14 @@ export const AttackAction: AttackAction = {
 
         ctx.currentCharacter.dealDamage(targets[0], Damage.fromRaw({ Health: damage }));
     },
-    targetChoosingAuto: (ctx, triggeredBy) => {
+    needsTarget: true,
+    targetChoosingAuto: (ctx, triggeredBy, filters) => {
         if (triggeredBy)
             return [triggeredBy];
 
-        return ctx.currentScene ? [ctx.currentScene.enemies[0]] : [];
+        const source = ctx.currentScene!.enemies.filter(c => filters?.every(f => f(c)) ?? true);
+
+        return ctx.currentScene ? [source[0]] : [];
     }
 }
 

@@ -80,7 +80,7 @@ export const DemoScene: Scene = {
     },
     cleanup: (ctx: StartedGameContext) => { },
 
-    endConditions: [allEnemiesDiedEnd, playerDiedEnd],
+    endConditions: [allEnemiesDiedEnd, playerDiedEnd, playerEscapedEnd],
 }
 
 export const SCENE_LIST: Scene[] = [DemoScene];

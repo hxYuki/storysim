@@ -3,7 +3,7 @@ import { PercentBar, useEventHistoryBar } from '../game'
 import { ConditionReturn, Scene } from '../../common/Scene'
 import { StartedGameContext, WithCharacterContext } from '../../common/game-context';
 import { Character } from '../../common/Character';
-import { CharacterAction, NOPAction, NoTargetActionFromAction } from '../../common/CharacterAction';
+import { CharacterAction, EscapedBuff, NOPAction, NoTargetActionFromAction } from '../../common/CharacterAction';
 import { CharacterInitalSpeedDice } from '../../common/Dice';
 
 
@@ -35,7 +35,8 @@ export const BattlePage: Component<BattlePageProps> = (props) => {
     }
 
     function excuteAction(action: CharacterAction, ctx: WithCharacterContext, triggeredBy: Character | undefined, character: Character) {
-        const targets = action.targetChoosingAuto(ctx, triggeredBy);
+        // 使用 filter 排除已经逃跑的单位
+        const targets = action.targetChoosingAuto(ctx, triggeredBy, [c => !c.buffs().some(b => b.id === EscapedBuff.id)]);
 
         if (action.needsTarget && targets.length === 0) {
             action = NoTargetActionFromAction(action);
