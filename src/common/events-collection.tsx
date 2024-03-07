@@ -1,4 +1,7 @@
+import { Character } from "./Character";
+import { CharacterBaseProperty } from "./CharacterStatus";
 import { makePlayerPropertyCondition, makeTokenCondition } from "./Conditions";
+import { Scene, allEnemiesDiedEnd, playerDiedEnd, playerEscapedEnd } from "./Scene";
 import { EventChain, EventItem, SingleEvent } from "./events";
 
 import chance from 'chance';
@@ -41,8 +44,8 @@ const mahoushoujoEvents: EventItem[] = [
 
                 behavior(ctx) {
                     // 以下两种方式均可
-                    (ctx.thisEvent as SingleEvent)!.options![0].responseText = '“你有着想要实现的东西吧，你有那个能力做到。”'
-                    // this.responseText = '“你有着想要实现的东西吧，你有那个能力做到。”'
+                    // (ctx.thisEvent as SingleEvent)!.options![0].responseText = '“你有着想要实现的东西吧，你有那个能力做到。”'
+                    this.responseText = '“你有着想要实现的东西吧，你有那个能力做到。”'
 
                     return false;
                 }
@@ -74,15 +77,73 @@ const mahoushoujoEvents: EventItem[] = [
         type: 'single',
         thread: 'mahoushoujo',
         id: 'mahoushoujo-daily-issue',
-        text: '你感受到一股扭曲扩散而来的涟漪，附近有魔物作乱！',
+        text: '你感受到一股扭曲扩散而来的涟漪，附近有失心魔！',
         repeatable: true,
         conditions: [
             makeTokenCondition('ContextEqualsTo', 'mahoushoujo'),
         ],
         options: [
             {
-                'shortText': '前去剿灭',
+                shortText: '前去剿灭',
                 behavior(ctx) {
+                    const battles: Scene[] = [
+                        {
+                            id: 1,
+                            name: '失心魔结界',
+                            enemies: [],
+                            allies: [],
+                            setup(ctx) {
+                                let encounterRate = 10;
+                                let level = 1;
+                                const battleStart = () => {
+                                    const majou = new Character(1, '梦之失心魔');
+                                    ctx.currentScene!.runtime!.addEnemy([majou]);
+
+                                    ctx.currentScene!.runtime!.setAvailableActions([...ctx.player.actionList()]);
+                                }
+                                
+                                ctx.currentScene!.runtime!.setAvailableActions([{
+                                    type: 'special', id: -1, name: '前进', description: '深入探索', act(ctx, targets) {
+                                        if (ctx.chanceInstance.bool({ likelihood: encounterRate })) {
+                                            // 遇敌
+                                        } else {
+                                            // 5 次后必定遇敌
+                                            encounterRate += 3 * Math.pow(2, level - 1);
+                                            level++;
+                                        }
+                                    },
+                                    needsTarget: false,
+                                    targetChoosingAuto(ctx, triggeredBy, filters) {
+                                        return [];
+                                    },
+                                }, {
+                                    type: 'special', id: -2, name: '撤退', description: '撤退', act(ctx, targets) {
+                                        if (ctx.chanceInstance.bool({ likelihood: encounterRate })) {
+                                            // 遇敌
+                                        } else if (ctx.chanceInstance.bool({ likelihood: 100 - level * 17})) {
+                                            // TODO: 成功撤退（逃跑）
+                                        } else {
+                                            encounterRate -= 3 * Math.pow(2, level - 1);
+                                            level--;
+                                        }
+                                    },
+                                    needsTarget: false,
+                                    targetChoosingAuto(ctx, triggeredBy, filters) {
+                                        return [];
+                                    },
+                                    }]);
+                                
+                                
+                            },
+                            cleanup(ctx) {
+                                if (ctx.chanceInstance.bool({ likelihood: 60 })) {
+                                    const prop = ctx.player.properties();
+                                    ctx.player.statsModifyBy({ SanityCurrent: (prop.Sanity - prop.SanityCurrent) * 0.8 });
+                                }
+                            },
+                            endConditions: [allEnemiesDiedEnd, playerDiedEnd, playerEscapedEnd],
+                        }
+                    ];
                     // TODO: 此处应当进入战斗
                     return true;
                 },
@@ -109,8 +170,8 @@ const mahoushoujoEvents: EventItem[] = [
         ],
         options: [
             {
-                shortText: '抱住面前破碎的世界',
-                responseText: '你感受到最后的情绪从体内弥漫开来，夷平了周遭的一切，但是已经无所谓了；或许会有谁来将你消灭吧，但是已经无所谓了',
+                shortText: '抱紧面前破碎的世界',
+                responseText: '你感受到最后的情绪从体内弥漫开来，夷平了周遭的一切，但是已经无所谓了；或许会有谁来将你消灭吧，已经……无所谓了',
                 behavior(ctx) {
                     ctx.endGame();
                     return true;
@@ -273,6 +334,26 @@ export const DailyEvents: EventItem[] = [
     },
 ];
 
+const TestDailyEvents: EventItem[] = [
+    {
+        type: 'single',
+        id: 'test',
+        repeatable: true,
+        text: '日升月起，时光飞逝，你并未懈怠，你的属性提升了。',
+        options: [
+            {
+                shortText: '继续',
+                behavior(ctx) {
+                    let k = ctx.chanceInstance.pickone(CharacterBaseProperty.keys()) as keyof CharacterBaseProperty;
+                    ctx.player.statsModifyBy({ [k]: 1 });
+                    this.text = `${CharacterBaseProperty.nameMap()[k]} +1`;
+                    return true;
+                }
+            }
+        ],
+    }
+]
+
 // 彩蛋性质事件，玩玩梗啦
 export const NetaEvents: EventItem[] = [];
 
@@ -286,7 +367,7 @@ export const createEventCandidates = (eventCount = 20, rng: Chance.Chance): Even
     // 将整条剧情事件加入列表。。决定事件时记录当前完成的事件的索引，由此开始
     return pe.reduce((acc, cur) => {
         return acc.concat(cur);
-    }, [...DailyEvents]);
+    }, [...TestDailyEvents]);
 }
 
 

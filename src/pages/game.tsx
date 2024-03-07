@@ -617,7 +617,9 @@ export function useEventHistoryBar():
             textParams = {};
             textTemplate = '';
             isCurrentBuilding = false;
-            insertHistory(text, isChoice);
+            if (text !== '')
+                insertHistory(text, isChoice);
+            
             return builder;
         }
     };
